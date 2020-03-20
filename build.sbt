@@ -109,3 +109,5 @@ lazy val testSettings = Seq(
 // -----------------------------------------------------------------------------
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
+
+addCommandAlias("qa", "; clean; compile; coverage; test; coverageReport; coverageAggregate")

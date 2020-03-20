@@ -1,0 +1,11 @@
+matrix:
+  include:
+    - language: scala
+      scala:
+        - "2.12.10"
+      jdk:
+        - openjdk11
+      script:
+        - sbt ++$TRAVIS_SCALA_VERSION qa
+      after_success:
+        - sbt coveralls
