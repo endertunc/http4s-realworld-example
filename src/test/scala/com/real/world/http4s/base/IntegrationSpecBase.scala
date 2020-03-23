@@ -2,8 +2,8 @@ package com.real.world.http4s.base
 
 import cats.effect.{ Blocker, ContextShift, IO }
 
-import doobie.util.transactor.Transactor
 import doobie.util.ExecutionContexts
+import doobie.util.transactor.Transactor
 
 trait IntegrationSpecBase {
 

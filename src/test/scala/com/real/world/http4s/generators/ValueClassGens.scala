@@ -1,12 +1,14 @@
 package com.real.world.http4s.generators
 
-import com.real.world.http4s.model.comment.Comment.{ CommentBody, CommentId }
-import com.real.world.http4s.model.article.Article.{ ArticleBody, ArticleId, Description, Title }
-import com.real.world.http4s.model.tag.TagIn
-import com.real.world.http4s.model.user.User.{ Bio, Email, Image, PlainTextPassword, UserId, Username }
-
 import scala.collection.immutable.Stream
 import scala.util.Random
+
+import com.real.world.http4s.model.comment.Comment.CommentId
+import com.real.world.http4s.model.tag.TagIn
+import com.real.world.http4s.model.{ Username, Title, ArticleBody, Description, Email, PlainTextPassword, ArticleId, Bio, UserId, Image, CommentBody }
+
+import eu.timepit.refined.types.numeric.{ NonNegInt, PosInt }
+import eu.timepit.refined.types.string.NonEmptyString
 import org.scalacheck.Gen
 
 // scalastyle:off magic.number
@@ -53,19 +55,20 @@ trait ValueClassGens {
   private def randomBigString: String   = Random.alphanumeric.take(Random.nextInt(256) + 256).mkString
   private def randomId: Int             = Random.nextInt(Int.MaxValue) + 1
 
-  protected def emailGen: Gen[Email]                = Gen.delay(s"$randomSmallString@$randomSmallString.com").map(Email)
-  protected def passwordGen: Gen[PlainTextPassword] = Gen.delay(randomPassword).map(PlainTextPassword)
-  protected def usernameGen: Gen[Username]          = Gen.delay(randomUsername).map(Username)
-  protected def userIDGen: Gen[UserId]              = Gen.delay(UserId(randomId))
-  protected def bioGen: Gen[Option[Bio]]            = Gen.delay(Some(Bio(randomString)))
-  protected def imageGen: Gen[Option[Image]]        = Gen.delay(Some(Image(randomString)))
-  protected def commentIdGen: Gen[CommentId]        = Gen.delay(CommentId(randomId))
-  protected def commentBodyGen: Gen[CommentBody]    = Gen.delay(randomString).map(CommentBody)
-  protected def articleIdGen: Gen[ArticleId]        = Gen.delay(ArticleId(randomId))
-  protected def articleBodyGen: Gen[ArticleBody]    = Gen.delay(randomBigString).map(ArticleBody)
-  protected def titleGen: Gen[Title]                = Gen.delay(randomString).map(Title)
-  protected def descriptionGen: Gen[Description]    = Gen.delay(randomString).map(Description)
-  protected def tagInGen: Gen[TagIn]                = Gen.delay(randomString).map(TagIn(_))
+  protected def emailGen: Gen[Email] =
+    Gen.delay(s"$randomSmallString@$randomSmallString.com").map(v => Email(NonEmptyString.unsafeFrom(v)))
+  protected def passwordGen: Gen[PlainTextPassword] = Gen.delay(randomPassword).map(v => PlainTextPassword(NonEmptyString.unsafeFrom(v)))
+  protected def usernameGen: Gen[Username]          = Gen.delay(randomUsername).map(v => Username(NonEmptyString.unsafeFrom(v)))
+  protected def userIDGen: Gen[UserId]              = Gen.delay(UserId(NonNegInt.unsafeFrom(randomId)))
+  protected def bioGen: Gen[Option[Bio]]            = Gen.delay(Some(Bio(NonEmptyString.unsafeFrom(randomString))))
+  protected def imageGen: Gen[Option[Image]]        = Gen.delay(Some(Image(NonEmptyString.unsafeFrom(randomString))))
+  protected def commentIdGen: Gen[CommentId]        = Gen.delay(CommentId(PosInt.unsafeFrom(randomId)))
+  protected def commentBodyGen: Gen[CommentBody]    = Gen.delay(CommentBody(NonEmptyString.unsafeFrom(randomString)))
+  protected def articleIdGen: Gen[ArticleId]        = Gen.delay(ArticleId(NonNegInt.unsafeFrom(randomId)))
+  protected def articleBodyGen: Gen[ArticleBody]    = Gen.delay(ArticleBody(NonEmptyString.unsafeFrom(randomString)))
+  protected def titleGen: Gen[Title]                = Gen.delay(Title(NonEmptyString.unsafeFrom(randomString)))
+  protected def descriptionGen: Gen[Description]    = Gen.delay(Description(NonEmptyString.unsafeFrom(randomString)))
+  protected def tagInGen: Gen[TagIn]                = Gen.delay(TagIn(randomString))
 
 }
 // scalastyle:on magic.number

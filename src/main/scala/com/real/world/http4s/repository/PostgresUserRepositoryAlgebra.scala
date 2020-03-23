@@ -3,24 +3,24 @@ package com.real.world.http4s.repository
 import java.sql.SQLException
 import java.time.Instant
 
-import com.real.world.http4s.AppError.UserAlreadyExist
-import com.real.world.http4s.model.profile.{ IsFollowing, Profile }
-import com.real.world.http4s.model.user.User
-import com.real.world.http4s.model.user.User.{ Email, UserId, Username }
-import com.real.world.http4s.repository.algebra.UserRepositoryAlgebra
-import com.real.world.http4s.model.profile.{ IsFollowing, Profile }
-import com.real.world.http4s.model.user.User
-import com.real.world.http4s.repository.algebra.UserRepositoryAlgebra
-
 import cats.data.NonEmptyList
-import cats.implicits._
 import cats.effect.Async
+import cats.implicits._
 
 import doobie._
 import doobie.`enum`.SqlState
 import doobie.implicits._
 import doobie.implicits.legacy.instant.JavaTimeInstantMeta
 import doobie.postgres._
+import doobie.refined.implicits._
+
+import com.real.world.http4s.AppError.UserAlreadyExist
+import com.real.world.http4s.model.Instances._
+import com.real.world.http4s.model._
+import com.real.world.http4s.model.profile.{ IsFollowing, Profile }
+import com.real.world.http4s.model.user.User
+import com.real.world.http4s.repository.algebra.UserRepositoryAlgebra
+
 import io.chrisdavenport.log4cats.Logger
 
 class PostgresUserRepositoryAlgebra[F[_]: Async: Logger]()(implicit xa: Transactor[F]) extends UserRepositoryAlgebra[F] {

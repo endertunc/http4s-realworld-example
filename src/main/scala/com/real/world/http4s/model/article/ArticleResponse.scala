@@ -2,15 +2,15 @@ package com.real.world.http4s.model.article
 
 import java.time.Instant
 
-import com.real.world.http4s.model.article.Article.{ ArticleBody, Description, FavoritesCount, Slug, Title }
-import com.real.world.http4s.model.profile.Profile
-import com.real.world.http4s.model.tag.{ Tag, TagOut }
-import com.real.world.http4s.model
-import com.real.world.http4s.model.profile.Profile
-import com.real.world.http4s.model.tag.{ Tag, TagOut }
-
-import io.circe.Encoder
+import io.circe.generic.semiauto.deriveDecoder
 import io.circe.generic.semiauto.deriveEncoder
+import io.circe.refined._
+import io.circe.{ Decoder, Encoder }
+
+import com.real.world.http4s.model.Instances._
+import com.real.world.http4s.model._
+import com.real.world.http4s.model.profile.Profile
+import com.real.world.http4s.model.tag.{ Tag, TagOut }
 
 final case class ArticleResponse(
     slug: Slug,
@@ -24,13 +24,14 @@ final case class ArticleResponse(
     favoritesCount: FavoritesCount,
     author: Profile
 )
-final case class ArticleResponseWrapper(article: ArticleResponse)
 
+final case class ArticleResponseWrapper(article: ArticleResponse)
 final case class ArticleResponseListWrapper(articles: List[ArticleResponse], articlesCount: Int)
 
 object ArticleResponse {
 
   implicit val ArticleResponseOutEncoder: Encoder[ArticleResponse] = deriveEncoder[ArticleResponse]
+  implicit val ArticleResponseOutDecoder: Decoder[ArticleResponse] = deriveDecoder[ArticleResponse]
 
   def apply(
       article: Article,
@@ -83,7 +84,7 @@ object ArticleResponseListWrapper {
   def apply(articlesWithMetadata: => List[(Article, Profile, List[Tag], IsFavorited, FavoritesCount)]): ArticleResponseListWrapper = {
     val articles: List[ArticleResponse] = articlesWithMetadata.map {
       case (article, profile, tags, isFavorited, favoriteCount) =>
-        model.article.ArticleResponse(
+        ArticleResponse(
           article        = article,
           author         = profile,
           tags           = tags.map(TagOut.fromTag),

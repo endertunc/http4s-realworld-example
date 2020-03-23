@@ -2,26 +2,28 @@ package com.real.world.http4s.model.comment
 
 import java.time.Instant
 
-import com.real.world.http4s.model.article.Article.ArticleId
-import Comment.{ CommentBody, CommentId }
-import com.real.world.http4s.model.user.User.UserId
+import io.circe.generic.semiauto._
+import io.circe.refined._
+import io.circe.refined._
+import io.circe.{ Encoder, Decoder }
 
-import io.circe.Codec
-import io.circe.generic.extras.semiauto.deriveUnwrappedCodec
-import io.circe.generic.semiauto.deriveCodec
+import doobie.refined.implicits._
+import doobie.util.meta.Meta
 
-// ToDo dont use coded everywhere!
+import com.real.world.http4s.model.Instances._
+import com.real.world.http4s.model._
+import com.real.world.http4s.model._
+import com.real.world.http4s.model.comment.Comment.CommentId
 
+import eu.timepit.refined.types.numeric.PosInt
+import io.estatico.newtype.macros.newtype
+import scalaz.annotation.deriving
 final case class Comment(id: CommentId, body: CommentBody, articleId: ArticleId, authorId: UserId, createdAt: Instant, updatedAt: Instant)
 
 object Comment {
 
-  case class CommentId(value: Int) extends AnyVal
-  case class CommentBody(value: String) extends AnyVal
+  @deriving(Meta, Decoder, Encoder) @newtype case class CommentId(value: PosInt)
 
-  implicit val CommentIdCodec: Codec[CommentId]     = deriveUnwrappedCodec[CommentId]
-  implicit val CommentBodyCodec: Codec[CommentBody] = deriveUnwrappedCodec[CommentBody]
-
-  implicit val CommentEncoder: Codec[Comment] = deriveCodec[Comment]
-
+  implicit val CommentEncoder: Encoder[Comment] = deriveEncoder[Comment]
+  implicit val CommentDecoder: Decoder[Comment] = deriveDecoder[Comment]
 }

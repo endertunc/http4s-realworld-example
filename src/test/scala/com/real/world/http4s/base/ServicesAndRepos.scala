@@ -1,45 +1,48 @@
 package com.real.world.http4s.base
 
-import com.real.world.http4s.generators.{ ArticleGenerator, UserRegisterGenerator }
-import com.real.world.http4s.model.article.Article
-import com.real.world.http4s.model.tag.Tag
-import com.real.world.http4s.model.user.User
-import com.real.world.http4s.model.user.User.UserId
-import com.real.world.http4s.model.Pagination
-import com.real.world.http4s.module.RealWorldModule
-import com.real.world.http4s.security.PasswordHasher
-import com.real.world.http4s.generators.{ ArticleGenerator, UserRegisterGenerator }
-import com.real.world.http4s.model.Pagination
-import com.real.world.http4s.model.article.Article
-import com.real.world.http4s.model.tag.Tag
-import com.real.world.http4s.model.user.User
-import com.real.world.http4s.module.RealWorldModule
-import com.real.world.http4s.security.PasswordHasher
-
 import scala.concurrent.Future
+
+import org.http4s.syntax.string._
+import org.http4s.{ AuthScheme, EntityBody }
+
+import cats.effect.IO
 
 import io.circe.Encoder
 import io.circe.syntax._
 
-import cats.effect.IO
+import com.colisweb.tracing.context.OpenTracingContext
+import com.colisweb.tracing.core.TracingContextBuilder
 
-import org.http4s.{ AuthScheme, EntityBody }
-import fs2.text.utf8Encode
+import io.opentracing.util.GlobalTracer
+import io.opentracing.{ Span, Tracer }
+
+import com.real.world.http4s.generators.{ ArticleGenerator, UserRegisterGenerator }
+import com.real.world.http4s.model.article.Article
+import com.real.world.http4s.model.tag.Tag
+import com.real.world.http4s.model.user.User
+import com.real.world.http4s.model.{ Pagination, UserId }
+import com.real.world.http4s.module.RealWorldModule
+import com.real.world.http4s.authentication.PasswordHasher
+
+import org.scalatest.Assertion
+import org.scalatest.matchers.should.Matchers
+
+import eu.timepit.refined.api.Refined
 import fs2.Stream
+import fs2.text.utf8Encode
 import io.chrisdavenport.log4cats.SelfAwareStructuredLogger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.scalactic.source.Position
-import org.scalatest.Assertion
-import org.scalatest.matchers.should.Matchers
 import tsec.mac.jca.{ HMACSHA512, MacSigningKey }
-
-import org.http4s.syntax.string._
 
 trait ServicesAndRepos extends IntegrationSpecBase with Matchers {
 
-  implicit lazy val signingKey: MacSigningKey[HMACSHA512]  = HMACSHA512.generateKey[IO].unsafeRunSync
-  implicit lazy val logger: SelfAwareStructuredLogger[IO]  = Slf4jLogger.create[IO].unsafeRunSync()
-  implicit lazy val tsecPasswordHasher: PasswordHasher[IO] = ctx.tsec
+  implicit def refinedValue[T, P](refined: Refined[T, P]): T = refined.value
+
+  implicit lazy val signingKey: MacSigningKey[HMACSHA512]            = HMACSHA512.generateKey[IO].unsafeRunSync
+  implicit lazy val logger: SelfAwareStructuredLogger[IO]            = Slf4jLogger.create[IO].unsafeRunSync
+  implicit lazy val tracingContextBuilder: TracingContextBuilder[IO] = OpenTracingContext.builder[IO, Tracer, Span](GlobalTracer.get()).unsafeRunSync
+  implicit lazy val tsecPasswordHasher: PasswordHasher[IO]           = ctx.tsec
 
   val TokenAuthScheme: AuthScheme   = "Token".ci
   val defaultPagination: Pagination = Pagination(20, 0)

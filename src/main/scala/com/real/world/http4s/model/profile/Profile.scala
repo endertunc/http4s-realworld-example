@@ -1,11 +1,14 @@
 package com.real.world.http4s.model.profile
 
-import com.real.world.http4s.model.user.User.{ Bio, Image, Username }
-import com.real.world.http4s.model.user.User
-
 import io.circe.generic.semiauto.{ deriveDecoder, deriveEncoder }
+import io.circe.refined._
 import io.circe.{ Decoder, Encoder }
 
+import com.real.world.http4s.model.Instances._
+import com.real.world.http4s.model.Instances._
+import com.real.world.http4s.model.Instances._
+import com.real.world.http4s.model._
+import com.real.world.http4s.model.user.User
 final case class Profile(username: Username, bio: Option[Bio], image: Option[Image], following: IsFollowing)
 final case class ProfileResponseOutWrapper(profile: Profile)
 

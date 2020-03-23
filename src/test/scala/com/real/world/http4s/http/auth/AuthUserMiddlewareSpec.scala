@@ -1,32 +1,27 @@
 package com.real.world.http4s.http.auth
 
-import com.real.world.http4s.AppError.{ InvalidAuthorizationHeader, MissingAuthorizationHeader }
-import com.real.world.http4s.model.user.User
-import com.real.world.http4s.model.user.User.UserId
-import com.real.world.http4s.security.JwtAuthenticator
-import com.real.world.http4s.AppError
-import com.real.world.http4s.base.ServicesAndRepos
-import com.real.world.http4s.AppError
-import com.real.world.http4s.base.ServicesAndRepos
-import com.real.world.http4s.model.user.User
-import com.real.world.http4s.security.JwtAuthenticator
-import org.scalatest.{ EitherValues, OptionValues }
-import org.scalatest.flatspec.AsyncFlatSpec
-
-import cats.effect.IO
-
 import org.http4s.Credentials.Token
 import org.http4s.headers.Authorization
 import org.http4s.{ Status, _ }
+import cats.effect.IO
+import com.real.world.http4s.AppError.{ InvalidAuthorizationHeader, MissingAuthorizationHeader }
+import com.real.world.http4s.base.ServicesAndRepos
+import com.real.world.http4s.model.UserId
+import com.real.world.http4s.authentication.JwtAuthenticator
+import com.real.world.http4s.http.middleware.AuthUserMiddleware
+import com.real.world.http4s.{ model, AppError }
+import org.scalatest.flatspec.AsyncFlatSpec
+import org.scalatest.{ EitherValues, OptionValues }
+import eu.timepit.refined.auto._
 
 class AuthUserMiddlewareSpec extends AsyncFlatSpec with ServicesAndRepos with OptionValues with EitherValues {
-  private val userId = UserId(1)
 
   implicit val dummyJwtAuthenticator: JwtAuthenticator[IO] = new JwtAuthenticator[IO] {
-    override def generateJwt(userId: User.UserId): IO[String] = IO.delay("FakeToken")
+    override def generateJwt(userId: UserId): IO[model.Token] = IO.delay(model.Token("FakeToken"))
     override def verify(jwt: String): IO[UserId]              = IO(userId)
   }
-  val authUserMiddleware = new AuthUserMiddleware[IO]()
+  private val userId             = UserId(1)
+  private val authUserMiddleware = new AuthUserMiddleware[IO]()
 
   "AuthUserMiddleware" should "fail with MissingAuthorizationHeader when Authorization header is missing" in IOSuit {
     for {

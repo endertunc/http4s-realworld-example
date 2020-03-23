@@ -1,10 +1,9 @@
 package com.real.world.http4s.repository.algebra
 
-import com.real.world.http4s.model.article.Article.ArticleId
-import com.real.world.http4s.model.tag.Tag
-import com.real.world.http4s.model.tag.{ Tag, TagIn }
-
 import cats.data.NonEmptyList
+
+import com.real.world.http4s.model._
+import com.real.world.http4s.model.tag.{ Tag, TagIn }
 
 trait TagRepositoryAlgebra[F[_]] {
 

@@ -1,42 +1,49 @@
 package com.real.world.http4s.http.routes
 
-import com.real.world.http4s.http.BaseHttp4s
-import com.real.world.http4s.model.user.User.{ UserId, Username }
-import com.real.world.http4s.service.ProfileService
-import com.real.world.http4s.http.BaseHttp4s
-import com.real.world.http4s.model.profile.ProfileResponseOutWrapper
-import com.real.world.http4s.service.ProfileService
-
 import cats.effect.Async
 import cats.implicits._
-
-import org.http4s.AuthedRoutes
+import com.colisweb.tracing.core.{ TracingContext, TracingContextBuilder }
+import com.real.world.http4s.http.middleware.AuthedTracedRoutes.{ using, AuthedTraceContext, AuthedTracedRoutes }
+import com.real.world.http4s.http.BaseHttp4s
+import com.real.world.http4s.http.middleware.AuthedTracedRoutes
+import com.real.world.http4s.model._
+import com.real.world.http4s.model.profile.ProfileResponseOutWrapper
+import com.real.world.http4s.service.ProfileService
+import eu.timepit.refined.collection.NonEmpty
+import eu.timepit.refined.refineV
 import io.chrisdavenport.log4cats.Logger
 
-class ProfileRoutes[F[_]: Async: Logger]()(implicit profileService: ProfileService[F]) extends BaseHttp4s[F] {
+class ProfileRoutes[F[_]: Async: Logger: TracingContextBuilder]()(implicit profileService: ProfileService[F]) extends BaseHttp4s[F] {
 
-  val routes: AuthedRoutes[UserId, F] =
-    AuthedRoutes.of {
-      case GET -> Root / followeeUsername as userId =>
-        (for {
-          profile <- profileService.findProfileByUsername(Username(followeeUsername), userId)
-        } yield ProfileResponseOutWrapper(profile)).toResponse
+  object UsernameVar {
+    def unapply(slugStr: String): Option[Username] = refineV[NonEmpty](slugStr).toOption.map(Username.apply)
+  }
 
-      case POST -> Root / followeeUsername / "follow" as userId =>
-        (for {
-          _       <- profileService.follow(Username(followeeUsername), userId)
-          profile <- profileService.findProfileByUsername(Username(followeeUsername), userId)
-        } yield ProfileResponseOutWrapper(profile)).toResponse
+  val routes: AuthedTracedRoutes[F] =
+    AuthedTracedRoutes.of[F] {
+      case (GET -> Root / UsernameVar(followeeUsername)) using AuthedTraceContext(userId, implicit0(context: TracingContext[F])) =>
+        for {
+          profile  <- profileService.findProfileByUsername(followeeUsername, userId)
+          response <- Ok(ProfileResponseOutWrapper(profile))
+        } yield response
 
-      case DELETE -> Root / followeeUsername / "follow" as userId =>
-        (for {
-          _       <- profileService.unfollow(Username(followeeUsername), userId)
-          profile <- profileService.findProfileByUsername(Username(followeeUsername), userId)
-        } yield ProfileResponseOutWrapper(profile)).toResponse
+      case (POST -> Root / UsernameVar(followeeUsername) / "follow") using AuthedTraceContext(userId, implicit0(context: TracingContext[F])) =>
+        for {
+          _        <- profileService.follow(followeeUsername, userId)
+          profile  <- profileService.findProfileByUsername(followeeUsername, userId)
+          response <- Ok(ProfileResponseOutWrapper(profile))
+        } yield response
+
+      case (DELETE -> Root / UsernameVar(followeeUsername) / "follow") using AuthedTraceContext(userId, implicit0(context: TracingContext[F])) =>
+        for {
+          _        <- profileService.unfollow(followeeUsername, userId)
+          profile  <- profileService.findProfileByUsername(followeeUsername, userId)
+          response <- Ok(ProfileResponseOutWrapper(profile))
+        } yield response
     }
 
 }
 
 object ProfileRoutes {
-  def apply[F[_]: Async: Logger: ProfileService](): ProfileRoutes[F] = new ProfileRoutes[F]()
+  def apply[F[_]: Async: Logger: ProfileService: TracingContextBuilder](): ProfileRoutes[F] = new ProfileRoutes[F]()
 }

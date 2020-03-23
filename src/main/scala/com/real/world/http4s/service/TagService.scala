@@ -1,13 +1,12 @@
 package com.real.world.http4s.service
 
-import com.real.world.http4s.model.article.Article.ArticleId
-import com.real.world.http4s.model.tag.{ Tag, TagIn }
-import com.real.world.http4s.repository.algebra.TagRepositoryAlgebra
+import cats.data.NonEmptyList
+import cats.effect.Async
+
+import com.real.world.http4s.model._
 import com.real.world.http4s.model.tag.{ Tag, TagIn }
 import com.real.world.http4s.repository.algebra.TagRepositoryAlgebra
 
-import cats.data.NonEmptyList
-import cats.effect.Async
 import io.chrisdavenport.log4cats.Logger
 
 class TagService[F[_]: Async: Logger]()(implicit tagRepositoryAlgebra: TagRepositoryAlgebra[F]) {

@@ -1,10 +1,10 @@
 package com.real.world.http4s.model
 
+import cats.data.NonEmptyList
+
 import io.circe.Encoder
 import io.circe.generic.semiauto.deriveEncoder
 import io.circe.schema.ValidationError
-
-import cats.data.NonEmptyList
 
 case class Error(errors: NonEmptyList[String])
 case class ErrorWrapperOut(error: Error)

@@ -1,11 +1,10 @@
 package com.real.world.http4s.repository.algebra
 
-import com.real.world.http4s.model.user.User
-import com.real.world.http4s.model.user.User.{ Email, UserId, Username }
+import cats.data.NonEmptyList
+
+import com.real.world.http4s.model._
 import com.real.world.http4s.model.profile.Profile
 import com.real.world.http4s.model.user.User
-
-import cats.data.NonEmptyList
 
 trait UserRepositoryAlgebra[F[_]] {
 

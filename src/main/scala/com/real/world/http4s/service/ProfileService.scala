@@ -1,10 +1,11 @@
 package com.real.world.http4s.service
 
-import com.real.world.http4s.model.user.User.{ UserId, Username }
-import com.real.world.http4s.model.profile.Profile
-
 import cats.effect.Async
 import cats.implicits._
+
+import com.real.world.http4s.model._
+import com.real.world.http4s.model.profile.Profile
+
 import io.chrisdavenport.log4cats.Logger
 
 class ProfileService[F[_]: Async: Logger]()(implicit userService: UserService[F], followersService: FollowerService[F]) {

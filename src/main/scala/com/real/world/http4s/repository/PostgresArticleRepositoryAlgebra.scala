@@ -2,29 +2,28 @@ package com.real.world.http4s.repository
 
 import java.time.Instant
 
-import com.real.world.http4s.AppError.{ ArticleNotFound, RecordNotFound }
-import com.real.world.http4s.model.article.Article
-import com.real.world.http4s.model.article.Article.{ ArticleId, FavoritesCount, Slug }
-import com.real.world.http4s.model.tag.Tag.TagName
-import com.real.world.http4s.model.user.User.{ UserId, Username }
-import com.real.world.http4s.model.{ FavoritedRecord, Pagination }
-import com.real.world.http4s.repository.algebra.ArticleRepositoryAlgebra
-import com.real.world.http4s.model.{ FavoritedRecord, Pagination }
-import com.real.world.http4s.model.article.Article
-import com.real.world.http4s.repository.algebra.ArticleRepositoryAlgebra
-
 import cats.data.NonEmptyList
 import cats.effect.{ Async, Sync }
 import cats.free.Free
 import cats.implicits._
 
-import doobie.{ ConnectionIO, _ }
+import doobie.Fragments.whereOrOpt
 import doobie.free.connection
 import doobie.implicits._
-import doobie.Fragments.whereOrOpt
 import doobie.implicits.legacy.instant.JavaTimeInstantMeta
-import io.chrisdavenport.log4cats.{ Logger, SelfAwareStructuredLogger }
+import doobie.refined.implicits._
+import doobie.{ ConnectionIO, _ }
+
+import com.real.world.http4s.AppError.{ ArticleNotFound, RecordNotFound }
+import com.real.world.http4s.model.Instances._
+import com.real.world.http4s.model._
+import com.real.world.http4s.model.article.Article
+import com.real.world.http4s.model.tag.Tag.TagName
+import com.real.world.http4s.model.{ FavoritedRecord, Pagination }
+import com.real.world.http4s.repository.algebra.ArticleRepositoryAlgebra
+
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import io.chrisdavenport.log4cats.{ Logger, SelfAwareStructuredLogger }
 
 class PostgresArticleRepositoryAlgebra[F[_]: Async: Logger]()(implicit xa: Transactor[F]) extends ArticleRepositoryAlgebra[F] {
 
@@ -150,7 +149,7 @@ object ArticlesStatement {
     Async[F].delay(Instant.now).map { now =>
       sql"""
          UPDATE articles SET 
-         slug = ${article.slug}, title = ${article.title}, 
+         slug = ${article.slug}, title = ${article.title},
          description = ${article.description}, body = ${article.body}, updated_at = $now
          WHERE id = ${article.id}
          RETURNING id, slug, title, description, body, created_at, updated_at, author_id""".query[Article]

@@ -1,19 +1,21 @@
 package com.real.world.http4s.http
 
-import com.real.world.http4s.model.profile.{ IsFollowing, Profile, ProfileResponseOutWrapper }
-import com.real.world.http4s.base.ServicesAndRepos
-import com.real.world.http4s.model.profile.{ IsFollowing, Profile, ProfileResponseOutWrapper }
-
-import io.circe.Decoder
-import io.circe.generic.semiauto.deriveDecoder
-
-import cats.effect.IO
-
-import org.http4s.{ Headers, Method, Request }
 import org.http4s.Credentials.Token
 import org.http4s.circe.{ CirceEntityDecoder, CirceEntityEncoder }
 import org.http4s.headers.Authorization
 import org.http4s.implicits._
+import org.http4s.{ Headers, Method, Request }
+
+import cats.effect.IO
+
+import io.circe.Decoder
+import io.circe.generic.semiauto.deriveDecoder
+import io.circe.refined._
+
+import com.real.world.http4s.base.ServicesAndRepos
+import com.real.world.http4s.model.Instances._
+import com.real.world.http4s.model.profile.{ IsFollowing, Profile, ProfileResponseOutWrapper }
+
 import org.scalatest.flatspec.AsyncFlatSpec
 
 class ProfileRoutesSpec extends AsyncFlatSpec with ServicesAndRepos with CirceEntityDecoder with CirceEntityEncoder {
@@ -31,9 +33,9 @@ class ProfileRoutesSpec extends AsyncFlatSpec with ServicesAndRepos with CirceEn
       request = Request[IO](
         method  = Method.GET,
         uri     = apiProfiles / persistedFollowee.username.value,
-        headers = Headers.of(Authorization(Token(TokenAuthScheme, jwt)))
+        headers = Headers.of(Authorization(Token(TokenAuthScheme, jwt.value)))
       )
-      response                  <- ctx.endpoints.run(request)
+      response                  <- ctx.httpApp.run(request)
       profileResponseOutWrapper <- response.as[ProfileResponseOutWrapper]
     } yield profileResponseOutWrapper.profile.following shouldBe IsFollowing.NotFollowing
   }
@@ -47,9 +49,9 @@ class ProfileRoutesSpec extends AsyncFlatSpec with ServicesAndRepos with CirceEn
       request = Request[IO](
         method  = Method.GET,
         uri     = apiProfiles / persistedFollowee.username.value,
-        headers = Headers.of(Authorization(Token(TokenAuthScheme, jwt)))
+        headers = Headers.of(Authorization(Token(TokenAuthScheme, jwt.value)))
       )
-      response                  <- ctx.endpoints.run(request)
+      response                  <- ctx.httpApp.run(request)
       profileResponseOutWrapper <- response.as[ProfileResponseOutWrapper]
     } yield profileResponseOutWrapper.profile.following shouldBe IsFollowing.Following
   }
@@ -62,9 +64,9 @@ class ProfileRoutesSpec extends AsyncFlatSpec with ServicesAndRepos with CirceEn
       request = Request[IO](
         method  = Method.POST,
         uri     = apiProfiles / s"${persistedFollowee.username.value}" / "follow",
-        headers = Headers.of(Authorization(Token(TokenAuthScheme, jwt)))
+        headers = Headers.of(Authorization(Token(TokenAuthScheme, jwt.value)))
       )
-      response                  <- ctx.endpoints.run(request)
+      response                  <- ctx.httpApp.run(request)
       profileResponseOutWrapper <- response.as[ProfileResponseOutWrapper]
     } yield profileResponseOutWrapper.profile.following shouldBe IsFollowing.Following
   }
@@ -78,9 +80,9 @@ class ProfileRoutesSpec extends AsyncFlatSpec with ServicesAndRepos with CirceEn
       request = Request[IO](
         method  = Method.DELETE,
         uri     = apiProfiles / s"${persistedFollowee.username.value}" / "follow",
-        headers = Headers.of(Authorization(Token(TokenAuthScheme, jwt)))
+        headers = Headers.of(Authorization(Token(TokenAuthScheme, jwt.value)))
       )
-      response                  <- ctx.endpoints.run(request)
+      response                  <- ctx.httpApp.run(request)
       profileResponseOutWrapper <- response.as[ProfileResponseOutWrapper]
       _ = profileResponseOutWrapper.profile.following shouldBe IsFollowing.NotFollowing
       isFollowing <- ctx.followerService.isFollowing(persistedUser.id, persistedFollowee.id)

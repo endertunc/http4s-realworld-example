@@ -1,15 +1,17 @@
 package com.real.world.http4s.quill
 
-import com.real.world.http4s.model.comment.Comment.CommentId
-import com.real.world.http4s.quill.DoobiePostgresContext._
-import com.real.world.http4s.model.comment.Comment
-
-import doobie.syntax.connectionio.toConnectionIOOps
-import io.getquill.{ idiom => _ }
-
 import cats.effect.IO
 
-object Comments {
+import doobie.syntax.connectionio.toConnectionIOOps
+
+import com.real.world.http4s.model.comment.Comment
+import com.real.world.http4s.model.comment.Comment.CommentId
+import com.real.world.http4s.quill.DoobiePostgresContext._
+import com.real.world.http4s.repository.QuillSupport
+
+import io.getquill.{ idiom => _ }
+
+object Comments extends QuillSupport {
 
   private val comments = quote {
     querySchema[Comment](

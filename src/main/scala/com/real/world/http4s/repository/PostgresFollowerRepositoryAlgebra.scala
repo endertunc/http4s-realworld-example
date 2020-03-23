@@ -3,11 +3,6 @@ package com.real.world.http4s.repository
 import java.sql.SQLException
 import java.time.Instant
 
-import com.real.world.http4s.AppError.{ FolloweeNotFound, RecordNotFound }
-import com.real.world.http4s.model.user.User.UserId
-import com.real.world.http4s.repository.algebra.FollowerRepositoryAlgebra
-import com.real.world.http4s.repository.algebra.FollowerRepositoryAlgebra
-
 import cats.data.NonEmptyList
 import cats.effect.Async
 import cats.implicits._
@@ -17,8 +12,15 @@ import doobie.`enum`.SqlState
 import doobie.implicits._
 import doobie.implicits.legacy.instant.JavaTimeInstantMeta
 import doobie.postgres.sqlstate
-import io.chrisdavenport.log4cats.{ Logger, SelfAwareStructuredLogger }
+import doobie.refined.implicits._
+
+import com.real.world.http4s.AppError.{ FolloweeNotFound, RecordNotFound }
+import com.real.world.http4s.model.Instances._
+import com.real.world.http4s.model._
+import com.real.world.http4s.repository.algebra.FollowerRepositoryAlgebra
+
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import io.chrisdavenport.log4cats.{ Logger, SelfAwareStructuredLogger }
 
 class PostgresFollowerRepositoryAlgebra[F[_]: Async: Logger]()(implicit xa: Transactor[F]) extends FollowerRepositoryAlgebra[F] {
 

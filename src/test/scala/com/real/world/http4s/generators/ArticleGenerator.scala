@@ -3,15 +3,14 @@ package com.real.world.http4s.generators
 import java.time.Instant
 
 import scala.util.Random
-import com.real.world.http4s.model.article
-import com.real.world.http4s.model.article.Article.Slug
-import com.real.world.http4s.model.article.{ Article, CreateArticle, CreateArticleWrapper, UpdateArticle, UpdateArticleWrapper }
-import com.real.world.http4s.model.article
-import com.real.world.http4s.model.article.{ Article, CreateArticle, CreateArticleWrapper, UpdateArticle, UpdateArticleWrapper }
-import com.real.world.http4s.security.PasswordHasher
-import org.scalacheck.Gen
 
 import cats.effect.IO
+
+import com.real.world.http4s.model.article.{ Article, CreateArticle, CreateArticleWrapper, UpdateArticle, UpdateArticleWrapper }
+import com.real.world.http4s.model.{ article, Slug }
+import com.real.world.http4s.authentication.PasswordHasher
+
+import org.scalacheck.Gen
 
 object ArticleGenerator extends ValueClassGens {
 

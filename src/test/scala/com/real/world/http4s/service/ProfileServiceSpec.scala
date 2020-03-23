@@ -5,8 +5,7 @@ import com.real.world.http4s.base.ServicesAndRepos
 import com.real.world.http4s.generators.UserGenerator
 import com.real.world.http4s.model.profile.IsFollowing.{ Following, NotFollowing }
 import com.real.world.http4s.quill.Followers
-import com.real.world.http4s.AppError.{ FolloweeNotFound, RecordNotFound, UserNotFound }
-import com.real.world.http4s.generators.UserGenerator
+
 import org.scalatest.flatspec.AsyncFlatSpec
 
 class ProfileServiceSpec extends AsyncFlatSpec with ServicesAndRepos {

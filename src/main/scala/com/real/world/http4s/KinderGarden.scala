@@ -1,31 +1,33 @@
 //package com.real.world.http4s
 //
-//import io.circe.Decoder.Result
 //
 //// $COVERAGE-OFF$
 //object KinderGarden extends App {
 //
-//  import io.circe.literal._
-//  import io.circe.generic.auto._
+//  import io.circe.Decoder
+//  import io.circe.generic.extras.Configuration
+//  import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 //
-//  case class Example(a: Int, b: Option[String])
-//  import cats.syntax.show._
-//  import io.circe.CursorOp._
-//  val example1: Result[Example] =
-//    json"""
-//          {
-//            "a" : "A",
-//            "b" : null
-//          }
-//        """.as[Example]
+//  case class Person(
+//      id: Option[Int] = None,
+//      name: String,
+//      isActive: Boolean = true
+//  )
+//
+//  object Person {
+//    implicit val personConfig: Configuration        = Configuration.default.withDefaults
+//    implicit val personJsonDecoder: Decoder[Person] = deriveConfiguredDecoder
+//  }
+//
+//  println(io.circe.jawn.decode[Person]("""{"name": "Geovanny Junio"}"""))
 //
 //  val example2: Result[Example] =
 //    json"""
-//          {
-//            "a" : 10
-//          }
-//        """.as[Example]
-//
+//            {
+//              "a" : 10
+//            }
+//          """.as[Example]
+// }
 //  println(example1.left.get.show)
 //  println(example2)
 //  import com.github.andyglow.jsonschema.AsCirce._
@@ -43,9 +45,9 @@
 //  println(Example("Hello", None).asJson.noSpaces)
 //  println(validator.validate(Example("Hello", None).asJson))
 //  --
-  //  implicit val config: Configuration = Configuration.default.withDefaults.withStrictDecoding
+//  implicit val config: Configuration = Configuration.default.withDefaults.withStrictDecoding
 //  println(operationsJson.toOption.get.as[List[Operation]])
-  //  import io.circe.generic.extras.Configuration
+//  import io.circe.generic.extras.Configuration
 //  import io.circe.generic.extras.auto._
 //  import io.circe.syntax._
 //

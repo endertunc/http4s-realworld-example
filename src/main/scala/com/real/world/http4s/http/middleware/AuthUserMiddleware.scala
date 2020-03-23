@@ -1,22 +1,19 @@
-package com.real.world.http4s.http.auth
-
-import com.real.world.http4s.AppError.{ InvalidAuthorizationHeader, MissingAuthorizationHeader }
-import com.real.world.http4s.AppError
-import com.real.world.http4s.model.user.User.UserId
-import com.real.world.http4s.security.JwtAuthenticator
-import io.chrisdavenport.log4cats.Logger
-
-import cats.implicits._
-import cats.data.{ EitherT, Kleisli, OptionT }
-import cats.effect.Sync
-
-import mouse.all._
+package com.real.world.http4s.http.middleware
 
 import org.http4s._
 import org.http4s.dsl.Http4sDsl
 import org.http4s.headers.Authorization
 import org.http4s.server.AuthMiddleware
 import org.http4s.syntax.string._
+import cats.data.{ EitherT, Kleisli, OptionT }
+import cats.effect.Sync
+import cats.implicits._
+import com.real.world.http4s.AppError
+import com.real.world.http4s.AppError.{ InvalidAuthorizationHeader, MissingAuthorizationHeader }
+import com.real.world.http4s.model._
+import com.real.world.http4s.authentication.JwtAuthenticator
+import io.chrisdavenport.log4cats.Logger
+import mouse.all._
 
 class AuthUserMiddleware[F[_]: Sync: Logger]()(implicit jwtAuthenticator: JwtAuthenticator[F]) extends Http4sDsl[F] {
 
