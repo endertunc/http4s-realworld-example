@@ -1,10 +1,10 @@
 package com.real.world.http4s.json
 
-import io.circe.Json
-import io.circe.schema.ValidationError
-
 import cats.data.{ NonEmptyList, ValidatedNel }
 import cats.effect.Sync
+
+import io.circe.Json
+import io.circe.schema.ValidationError
 
 // ToDo This class also can be abstracted so we dont have direct dependency to circe but hey circe is everywhere anyway
 class CirceSchemaValidatorWrapper[T](id: String)(implicit schema: json.Schema[T]) extends io.circe.schema.Schema {

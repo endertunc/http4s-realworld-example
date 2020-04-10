@@ -1,7 +1,7 @@
 package com.real.world.http4s.model.tag
 
-import io.circe.generic.semiauto.deriveEncoder
 import io.circe.Encoder
+import io.circe.generic.semiauto.deriveEncoder
 
 final case class TagResponse(tags: List[TagOut])
 

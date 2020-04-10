@@ -1,23 +1,21 @@
 package com.real.world.http4s.model.comment
 
-import Comment.CommentBody
-import com.real.world.http4s.json.ValueClassSchemaValidators
-import com.real.world.http4s.json.{ CirceSchemaValidatorWrapper, ValueClassSchemaValidators }
+import io.circe.generic.semiauto.{ deriveDecoder, deriveEncoder }
+import io.circe.refined._
+import io.circe.{ Decoder, Encoder }
 
-import io.circe.Codec
-import io.circe.generic.semiauto.deriveCodec
-import json.Schema
+import com.real.world.http4s.model.Instances._
+import com.real.world.http4s.model._
 
 final case class CreateComment(body: CommentBody)
 final case class CreateCommentWrapper(comment: CreateComment)
 
 object CreateComment {
-  implicit val CreateCommentCodec: Codec[CreateComment] = deriveCodec[CreateComment]
+  implicit val CreateCommentEncoder: Encoder[CreateComment] = deriveEncoder[CreateComment]
+  implicit val CreateCommentDecoder: Decoder[CreateComment] = deriveDecoder[CreateComment]
 }
 
-object CreateCommentWrapper extends ValueClassSchemaValidators {
-  implicit val CreateCommentWrapperDecoder: Codec[CreateCommentWrapper]      = deriveCodec[CreateCommentWrapper]
-  implicit val CreateCommentWrapperCirceSchema: Schema[CreateCommentWrapper] = json.Json.schema[CreateCommentWrapper]
-  implicit val CreateCommentWrapperValidatorImpl: CirceSchemaValidatorWrapper[CreateCommentWrapper] =
-    new CirceSchemaValidatorWrapper[CreateCommentWrapper]("CreateCommentWrapper")
+object CreateCommentWrapper {
+  implicit val CreateCommentWrapperEncoder: Encoder[CreateCommentWrapper] = deriveEncoder[CreateCommentWrapper]
+  implicit val CreateCommentWrapperDecoder: Decoder[CreateCommentWrapper] = deriveDecoder[CreateCommentWrapper]
 }

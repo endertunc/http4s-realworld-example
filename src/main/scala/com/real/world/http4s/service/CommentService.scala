@@ -1,19 +1,15 @@
 package com.real.world.http4s.service
 
-import com.real.world.http4s.model.comment.Comment.{ CommentBody, CommentId }
-import com.real.world.http4s.model.article.Article.{ ArticleId, Slug }
+import cats.effect.Async
+import cats.implicits._
+
+import com.real.world.http4s.model._
 import com.real.world.http4s.model.comment.Comment
-import com.real.world.http4s.model.profile.Profile
-import com.real.world.http4s.model.user.User
-import com.real.world.http4s.model.user.User.UserId
-import com.real.world.http4s.repository.algebra.CommentRepositoryAlgebra
-import com.real.world.http4s.model.comment.Comment
+import com.real.world.http4s.model.comment.Comment.CommentId
 import com.real.world.http4s.model.profile.Profile
 import com.real.world.http4s.model.user.User
 import com.real.world.http4s.repository.algebra.CommentRepositoryAlgebra
 
-import cats.effect.Async
-import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 
 class CommentService[F[_]: Async: Logger]()(implicit articleService: ArticleService[F], commentsRepositoryAlgebra: CommentRepositoryAlgebra[F]) {

@@ -1,20 +1,19 @@
 package com.real.world.http4s.service
 
-import com.real.world.http4s.generators.ArticleGenerator
-import com.real.world.http4s.quill.Articles
-import com.real.world.http4s.AppError.ArticleNotFound
-import com.real.world.http4s.base.ServicesAndRepos
-import com.real.world.http4s.model.article.Article.FavoritesCount
-import com.real.world.http4s.model.article.IsFavorited.Favorited
-import com.real.world.http4s.model.article.IsFavorited.NotFavorited
-import com.real.world.http4s.model.Pagination
-import com.real.world.http4s.AppError.ArticleNotFound
-import com.real.world.http4s.generators.ArticleGenerator
-
 import cats.data.NonEmptyList
 import cats.effect.IO
+
+import com.real.world.http4s.AppError.ArticleNotFound
+import com.real.world.http4s.base.ServicesAndRepos
+import com.real.world.http4s.generators.ArticleGenerator
+import com.real.world.http4s.model.article.IsFavorited.{ NotFavorited, Favorited }
+import com.real.world.http4s.model.{ Pagination, FavoritesCount }
+import com.real.world.http4s.quill.Articles
+
 import org.scalatest.OptionValues
 import org.scalatest.flatspec.AsyncFlatSpec
+
+import eu.timepit.refined.auto._
 
 class ArticleServiceSpec extends AsyncFlatSpec with ServicesAndRepos with OptionValues {
 

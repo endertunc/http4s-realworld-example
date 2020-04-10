@@ -1,43 +1,31 @@
 package com.real.world.http4s.http
 
-import com.real.world.http4s.AppError.ArticleNotFound
-import com.real.world.http4s.base.ServicesAndRepos
-import com.real.world.http4s.generators.{ ArticleGenerator, CommentGenerator }
-import com.real.world.http4s.model.article.IsFavorited.NotFavorited
-import com.real.world.http4s.model.article.IsFavorited.Favorited
-import com.real.world.http4s.model.article._
-import com.real.world.http4s.model.comment.{ CommentListResponseOutWrapper, CommentResponseWrapper, CreateComment, CreateCommentWrapper }
-import com.real.world.http4s.model.profile.IsFollowing.NotFollowing
-import com.real.world.http4s.quill.Articles
-import com.real.world.http4s.AppError.ArticleNotFound
-import com.real.world.http4s.base.ServicesAndRepos
-import com.real.world.http4s.generators.{ ArticleGenerator, CommentGenerator }
-import com.real.world.http4s.model.article.{
-  ArticleResponse,
-  ArticleResponseListWrapper,
-  ArticleResponseWrapper,
-  CreateArticle,
-  CreateArticleWrapper,
-  IsFavorited,
-  UpdateArticle,
-  UpdateArticleWrapper
-}
-import com.real.world.http4s.model.comment.{ CommentListResponseOutWrapper, CommentResponseWrapper, CreateComment, CreateCommentWrapper }
-import com.real.world.http4s.quill.Articles
-import org.scalatest.OptionValues
-import org.scalatest.flatspec.AsyncFlatSpec
-
-import io.circe.generic.semiauto.{ deriveDecoder, deriveEncoder }
-import io.circe.{ Decoder, Encoder }
-
-import cats.effect.IO
-
 import org.http4s.Credentials.Token
 import org.http4s._
 import org.http4s.circe.{ CirceEntityDecoder, CirceEntityEncoder }
 import org.http4s.headers.Authorization
 import org.http4s.implicits._
 
+import cats.effect.IO
+
+import io.circe.generic.semiauto.{ deriveDecoder, deriveEncoder }
+import io.circe.refined._
+import io.circe.refined._
+import io.circe.{ Encoder, Decoder }
+
+import com.real.world.http4s.AppError.ArticleNotFound
+import com.real.world.http4s.base.ServicesAndRepos
+import com.real.world.http4s.generators.{ ArticleGenerator, CommentGenerator }
+import com.real.world.http4s.model.Instances._
+import com.real.world.http4s.model.Instances._
+import com.real.world.http4s.model.article.IsFavorited.{ NotFavorited, Favorited }
+import com.real.world.http4s.model.article._
+import com.real.world.http4s.model.comment._
+import com.real.world.http4s.model.profile.IsFollowing.NotFollowing
+import com.real.world.http4s.quill.Articles
+
+import org.scalatest.OptionValues
+import org.scalatest.flatspec.AsyncFlatSpec
 class ArticleRoutesSpec extends AsyncFlatSpec with ServicesAndRepos with CirceEntityDecoder with CirceEntityEncoder with OptionValues {
 
   // response.bodyAsText.compile.string.unsafeRunSync()
@@ -72,9 +60,9 @@ class ArticleRoutesSpec extends AsyncFlatSpec with ServicesAndRepos with CirceEn
       request = Request[IO](
         method  = Method.POST,
         uri     = apiArticles / persistedArticle.slug.value / "favorite",
-        headers = Headers.of(Authorization(Token(TokenAuthScheme, jwt)))
+        headers = Headers.of(Authorization(Token(TokenAuthScheme, jwt.value.value)))
       )
-      response               <- ctx.endpoints.run(request)
+      response               <- ctx.httpApp.run(request)
       _                      <- IO(response.status shouldBe Status.Ok)
       articleResponseWrapper <- response.as[ArticleResponseWrapper]
       _                      <- IO(articleResponseWrapper.article.favorited shouldBe Favorited)
@@ -93,9 +81,9 @@ class ArticleRoutesSpec extends AsyncFlatSpec with ServicesAndRepos with CirceEn
       request = Request[IO](
         method  = Method.DELETE,
         uri     = apiArticles / persistedArticle.slug.value / "favorite",
-        headers = Headers.of(Authorization(Token(TokenAuthScheme, jwt)))
+        headers = Headers.of(Authorization(Token(TokenAuthScheme, jwt.value)))
       )
-      response               <- ctx.endpoints.run(request)
+      response               <- ctx.httpApp.run(request)
       _                      <- IO(response.status shouldBe Status.Ok)
       articleResponseWrapper <- response.as[ArticleResponseWrapper]
       _                      <- IO(articleResponseWrapper.article.favorited shouldBe NotFavorited)
@@ -115,9 +103,9 @@ class ArticleRoutesSpec extends AsyncFlatSpec with ServicesAndRepos with CirceEn
         method  = Method.POST,
         uri     = apiArticles / persistedArticle.slug.value / "comments",
         body    = createComment.toJsonBody,
-        headers = Headers.of(Authorization(Token(TokenAuthScheme, jwt)))
+        headers = Headers.of(Authorization(Token(TokenAuthScheme, jwt.value)))
       )
-      response          <- ctx.endpoints.run(request)
+      response          <- ctx.httpApp.run(request)
       _                 <- IO(response.status shouldBe Status.Ok)
       _                 <- response.as[CommentResponseWrapper]
       commentsWithUsers <- ctx.commentService.findCommentsWithAuthorByArticleId(persistedArticle.id)
@@ -137,9 +125,9 @@ class ArticleRoutesSpec extends AsyncFlatSpec with ServicesAndRepos with CirceEn
         method  = Method.POST,
         uri     = apiArticles,
         body    = articleRequestIn.toJsonBody,
-        headers = Headers.of(Authorization(Token(TokenAuthScheme, jwt)))
+        headers = Headers.of(Authorization(Token(TokenAuthScheme, jwt.value)))
       )
-      response           <- ctx.endpoints.run(request)
+      response           <- ctx.httpApp.run(request)
       _                  <- IO(response.status shouldBe Status.Ok)
       articleResponseOut <- response.as[ArticleResponseWrapper]
       // should check before that this returns NotFollowing? Maybe?
@@ -155,9 +143,9 @@ class ArticleRoutesSpec extends AsyncFlatSpec with ServicesAndRepos with CirceEn
       request = Request[IO](
         method  = Method.DELETE,
         uri     = apiArticles / persistedArticle.slug.value,
-        headers = Headers.of(Authorization(Token(TokenAuthScheme, jwt)))
+        headers = Headers.of(Authorization(Token(TokenAuthScheme, jwt.value)))
       )
-      response <- ctx.endpoints.run(request)
+      response <- ctx.httpApp.run(request)
       _        <- IO(response.status shouldBe Status.Ok)
       // should check before that this returns NotFollowing? Maybe?
       article <- ctx.articleService.findArticleBySlug(persistedArticle.slug)
@@ -174,9 +162,9 @@ class ArticleRoutesSpec extends AsyncFlatSpec with ServicesAndRepos with CirceEn
       request = Request[IO](
         method  = Method.DELETE,
         uri     = apiArticles / persistedArticle.slug.value / "comments" / persistedComment.id.value.toString,
-        headers = Headers.of(Authorization(Token(TokenAuthScheme, jwt)))
+        headers = Headers.of(Authorization(Token(TokenAuthScheme, jwt.value)))
       )
-      response <- ctx.endpoints.run(request)
+      response <- ctx.httpApp.run(request)
       _        <- IO(response.status shouldBe Status.Ok)
       // should check before that this returns NotFollowing? Maybe?
       commentsAndAuthors <- ctx.commentService.findCommentsWithAuthorByArticleId(persistedArticle.id)
@@ -195,9 +183,9 @@ class ArticleRoutesSpec extends AsyncFlatSpec with ServicesAndRepos with CirceEn
       request = Request[IO](
         method  = Method.GET,
         uri     = apiArticles / persistedArticle.slug.value / "comments",
-        headers = Headers.of(Authorization(Token(TokenAuthScheme, jwt)))
+        headers = Headers.of(Authorization(Token(TokenAuthScheme, jwt.value)))
       )
-      response <- ctx.endpoints.run(request)
+      response <- ctx.httpApp.run(request)
       _        <- IO(response.status shouldBe Status.Ok)
       // should check before that this returns NotFollowing? Maybe?
       commentListResponseOutWrapper <- response.as[CommentListResponseOutWrapper]
@@ -216,7 +204,7 @@ class ArticleRoutesSpec extends AsyncFlatSpec with ServicesAndRepos with CirceEn
         method = Method.GET,
         uri    = apiArticles / persistedArticle.slug.value / "comments"
       )
-      response                      <- ctx.endpoints.run(request)
+      response                      <- ctx.httpApp.run(request)
       _                             <- IO(response.status shouldBe Status.Ok)
       commentListResponseOutWrapper <- response.as[CommentListResponseOutWrapper]
     } yield commentListResponseOutWrapper.comments should have size 2
@@ -230,9 +218,9 @@ class ArticleRoutesSpec extends AsyncFlatSpec with ServicesAndRepos with CirceEn
       request = Request[IO](
         method  = Method.GET,
         uri     = apiArticles / persistedArticle.slug.value,
-        headers = Headers.of(Authorization(Token(TokenAuthScheme, jwt)))
+        headers = Headers.of(Authorization(Token(TokenAuthScheme, jwt.value)))
       )
-      response <- ctx.endpoints.run(request)
+      response <- ctx.httpApp.run(request)
       _        <- IO(response.status shouldBe Status.Ok)
       // should check before that this returns NotFollowing? Maybe?
       articleResponseOutWrapper <- response.as[ArticleResponseWrapper]
@@ -244,7 +232,7 @@ class ArticleRoutesSpec extends AsyncFlatSpec with ServicesAndRepos with CirceEn
       persistedUser         <- insertUser()
       (persistedArticle, _) <- insertArticle(persistedUser.id)
       request = Request[IO](method = Method.GET, uri = apiArticles / persistedArticle.slug.value)
-      response <- ctx.endpoints.run(request)
+      response <- ctx.httpApp.run(request)
       _        <- IO(response.status shouldBe Status.Ok)
       // should check before that this returns NotFollowing? Maybe?
       articleResponseOutWrapper <- response.as[ArticleResponseWrapper]
@@ -265,9 +253,9 @@ class ArticleRoutesSpec extends AsyncFlatSpec with ServicesAndRepos with CirceEn
         method  = Method.PUT,
         uri     = apiArticles / persistedArticle.slug.value,
         body    = updateArticleRequestInWrapper.toJsonBody,
-        headers = Headers.of(Authorization(Token(TokenAuthScheme, jwt)))
+        headers = Headers.of(Authorization(Token(TokenAuthScheme, jwt.value)))
       )
-      response                  <- ctx.endpoints.run(request)
+      response                  <- ctx.httpApp.run(request)
       _                         <- IO(response.status shouldBe Status.Ok)
       articleResponseOutWrapper <- response.as[ArticleResponseWrapper]
     } yield {
@@ -287,8 +275,8 @@ class ArticleRoutesSpec extends AsyncFlatSpec with ServicesAndRepos with CirceEn
       persistedArticle2 <- Articles.insertArticle(persistedUser1.id)
       persistedArticle3 <- Articles.insertArticle(persistedUser2.id)
       persistedArticle4 <- Articles.insertArticle(persistedUser2.id)
-      request = Request[IO](method = Method.GET, uri = apiArticles +? ("author", persistedUser1.username.value))
-      response                   <- ctx.endpoints.run(request)
+      request = Request[IO](method = Method.GET, uri = apiArticles +? ("author", persistedUser1.username.value.value))
+      response                   <- ctx.httpApp.run(request)
       _                          <- IO(response.status shouldBe Status.Ok)
       articleResponseListWrapper <- response.as[ArticleResponseListWrapper]
     } yield articleResponseListWrapper.articles should have size 2
@@ -310,9 +298,9 @@ class ArticleRoutesSpec extends AsyncFlatSpec with ServicesAndRepos with CirceEn
       request = Request[IO](
         method  = Method.GET,
         uri     = apiArticles / "feed",
-        headers = Headers.of(Authorization(Token(TokenAuthScheme, jwt)))
+        headers = Headers.of(Authorization(Token(TokenAuthScheme, jwt.value)))
       )
-      response                   <- ctx.endpoints.run(request)
+      response                   <- ctx.httpApp.run(request)
       _                          <- IO(response.status shouldBe Status.Ok)
       articleResponseListWrapper <- response.as[ArticleResponseListWrapper]
     } yield articleResponseListWrapper.articles should have size 3

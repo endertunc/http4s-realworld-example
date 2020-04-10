@@ -1,20 +1,18 @@
 package com.real.world.http4s.http
 
-import com.real.world.http4s.base.ServicesAndRepos
-import com.real.world.http4s.generators.TagGenerator
-import com.real.world.http4s.model.tag.TagResponse
-import com.real.world.http4s.base.ServicesAndRepos
-import com.real.world.http4s.generators.TagGenerator
-import com.real.world.http4s.model.tag.TagResponse
+import org.http4s.circe.{ CirceEntityDecoder, CirceEntityEncoder }
+import org.http4s.implicits._
+import org.http4s.{ Request, Method }
+
+import cats.effect.IO
 
 import io.circe.Decoder
 import io.circe.generic.semiauto.deriveDecoder
 
-import cats.effect.IO
+import com.real.world.http4s.base.ServicesAndRepos
+import com.real.world.http4s.generators.TagGenerator
+import com.real.world.http4s.model.tag.TagResponse
 
-import org.http4s.{ Method, Request }
-import org.http4s.circe.{ CirceEntityDecoder, CirceEntityEncoder }
-import org.http4s.implicits._
 import org.scalatest.flatspec.AsyncFlatSpec
 
 class TagRoutesSpec extends AsyncFlatSpec with ServicesAndRepos with CirceEntityDecoder with CirceEntityEncoder {
@@ -31,7 +29,7 @@ class TagRoutesSpec extends AsyncFlatSpec with ServicesAndRepos with CirceEntity
     )
     for {
       _           <- ctx.tagService.createTags(tagIns)
-      response    <- ctx.endpoints.run(request)
+      response    <- ctx.httpApp.run(request)
       tagResponse <- response.as[TagResponse]
     } yield tagResponse.tags.filter(t => tagIns.exists(p => p.name == t.name)) should have size 2
 

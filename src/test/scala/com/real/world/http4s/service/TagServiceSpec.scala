@@ -1,11 +1,11 @@
 package com.real.world.http4s.service
 
+import cats.data.NonEmptyList
+
 import com.real.world.http4s.base.ServicesAndRepos
 import com.real.world.http4s.generators.TagGenerator
 import com.real.world.http4s.quill.{ Articles, Tags }
-import com.real.world.http4s.generators.TagGenerator
 
-import cats.data.NonEmptyList
 import org.scalatest.flatspec.AsyncFlatSpec
 
 class TagServiceSpec extends AsyncFlatSpec with ServicesAndRepos {

@@ -2,6 +2,7 @@ package com.real.world.http4s.generators
 
 import com.real.world.http4s.model.user
 import com.real.world.http4s.model.user.RegisterUser
+
 import org.scalacheck.Gen
 
 object UserRegisterGenerator extends ValueClassGens {

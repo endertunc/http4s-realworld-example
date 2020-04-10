@@ -1,27 +1,24 @@
 package com.real.world.http4s.repository
 
-import com.real.world.http4s.model.article.Article
-import com.real.world.http4s.model.article.Article.ArticleId
-import com.real.world.http4s.model.tag.Tag.TagId
-import com.real.world.http4s.model.tag.{ Tag, TagIn }
-import com.real.world.http4s.repository.algebra.TagRepositoryAlgebra
-import com.real.world.http4s.model.article.Article
-import com.real.world.http4s.model.tag.{ Tag, TagIn }
-import com.real.world.http4s.repository.algebra.TagRepositoryAlgebra
-
 import cats.data.NonEmptyList
 import cats.effect.Async
 import cats.implicits._
 
 import doobie._
 import doobie.implicits._
+import doobie.refined.implicits._
 import doobie.util.update.Update
+
+import com.real.world.http4s.model.Instances._
+import com.real.world.http4s.model._
+import com.real.world.http4s.model.tag.Tag.TagId
+import com.real.world.http4s.model.tag.{ Tag, TagIn }
+import com.real.world.http4s.repository.algebra.TagRepositoryAlgebra
+
 import io.chrisdavenport.log4cats.Logger
 
 // ToDo values that might be related with errors
 class PostgresTagRepositoryAlgebra[F[_]: Async: Logger]()(implicit xa: Transactor[F]) extends TagRepositoryAlgebra[F] {
-
-//  implicit val logger: SelfAwareStructuredLogger[F] = Slf4jLogger.getLogger[F]
 
   override def createTags(tags: List[TagIn]): F[List[Tag]] =
     TagsStatement
@@ -36,7 +33,7 @@ class PostgresTagRepositoryAlgebra[F[_]: Async: Logger]()(implicit xa: Transacto
       .transact(xa)
 
   // ToDo .map(_ => ())
-  override def insertArticleTagsAssociation(articleId: Article.ArticleId, tags: List[Tag]): F[Unit] =
+  override def insertArticleTagsAssociation(articleId: ArticleId, tags: List[Tag]): F[Unit] =
     TagsStatement
       .insertArticleTagsAssociation(articleId, tags)
       .compile
@@ -59,7 +56,7 @@ class PostgresTagRepositoryAlgebra[F[_]: Async: Logger]()(implicit xa: Transacto
           .groupBy {
             case (articleId, _) => articleId
           }
-          .mapValues(_.map { case (articleId, tags) => tags })
+          .mapValues(_.map { case (_, tags) => tags })
       }
       .transact(xa)
 

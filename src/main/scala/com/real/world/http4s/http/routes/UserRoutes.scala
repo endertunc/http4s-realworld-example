@@ -1,48 +1,41 @@
 package com.real.world.http4s.http.routes
 
-import com.real.world.http4s.http.BaseHttp4s
-import com.real.world.http4s.model.user.User.UserId
-import com.real.world.http4s.model.user.{ UpdateUserWrapper, UserResponseWrapper }
-import com.real.world.http4s.security.{ JwtAuthenticator, PasswordHasher }
-import com.real.world.http4s.http.BaseHttp4s
-import com.real.world.http4s.model.user.{ UpdateUserWrapper, UserResponseWrapper }
-import com.real.world.http4s.security.{ JwtAuthenticator, PasswordHasher }
-import com.real.world.http4s.service.UserService
-
 import cats.effect.Async
 import cats.implicits._
-
-import org.http4s.AuthedRoutes
+import com.colisweb.tracing.core.{ TracingContext, TracingContextBuilder }
+import com.real.world.http4s.http.middleware.AuthedTracedRoutes.{ using, AuthedTraceContext, AuthedTracedRoutes }
+import com.real.world.http4s.http.BaseHttp4s
+import com.real.world.http4s.http.middleware.AuthedTracedRoutes
+import com.real.world.http4s.model.user.{ UpdateUserWrapper, UserResponseWrapper }
+import com.real.world.http4s.authentication.JwtAuthenticator
+import com.real.world.http4s.service.UserService
 import io.chrisdavenport.log4cats.Logger
 
-class UserRoutes[F[_]: Async: Logger]()(
-    implicit userService: UserService[F],
-    passwordHasher: PasswordHasher[F],
-    jwtAuthenticator: JwtAuthenticator[F]
-) extends BaseHttp4s[F] {
+class UserRoutes[F[_]: Async: Logger: TracingContextBuilder]()(implicit userService: UserService[F], jwtAuthenticator: JwtAuthenticator[F])
+    extends BaseHttp4s[F] {
 
-  val routes: AuthedRoutes[UserId, F] =
-    AuthedRoutes.of {
-      case GET -> Root as userId =>
-        val response: F[UserResponseWrapper] = for {
+  val routes: AuthedTracedRoutes[F] =
+    AuthedTracedRoutes.of[F] {
+      case (GET -> Root) using AuthedTraceContext(userId, implicit0(context: TracingContext[F])) =>
+        for {
           user                   <- userService.findUserById(userId)
           userResponseOutWrapper <- user.toUserResponseOutWrapper
-        } yield userResponseOutWrapper
-        response // implicit conversation from F[A] to F[Response[F]]
+          response               <- Ok(userResponseOutWrapper)
+        } yield response
 
-      case req @ PUT -> Root as userId =>
-        req.req.decode[UpdateUserWrapper] { updateUserWrapper =>
+      case (req @ PUT -> Root) using AuthedTraceContext(userId, implicit0(context: TracingContext[F])) =>
+        req.decode[UpdateUserWrapper] { updateUserWrapper =>
           val updateUserRequestIn = updateUserWrapper.user
-          val response: F[UserResponseWrapper] = for {
+          for {
             updateResponse         <- userService.updateUser(updateUserRequestIn, userId)
-            userResponseOutWrapper <- updateResponse.toUserResponseOutWrapper()
-          } yield userResponseOutWrapper: UserResponseWrapper
-          response // implicit conversation from F[A] to F[Response[F]]
+            userResponseOutWrapper <- updateResponse.toUserResponseOutWrapper
+            response               <- Ok(userResponseOutWrapper: UserResponseWrapper)
+          } yield response
         }
     }
 
 }
 
 object UserRoutes {
-  def apply[F[_]: Async: Logger: UserService: PasswordHasher: JwtAuthenticator](): UserRoutes[F] = new UserRoutes[F]()
+  def apply[F[_]: Async: Logger: UserService: JwtAuthenticator: TracingContextBuilder](): UserRoutes[F] = new UserRoutes[F]()
 }

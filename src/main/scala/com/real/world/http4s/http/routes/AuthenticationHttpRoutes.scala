@@ -1,47 +1,50 @@
 package com.real.world.http4s.http.routes
 
-import com.real.world.http4s.http.BaseHttp4s
-import com.real.world.http4s.model.user.{ RegisterUser, _ }
-import com.real.world.http4s.security.{ JwtAuthenticator, PasswordHasher }
-import com.real.world.http4s.http.BaseHttp4s
-import com.real.world.http4s.model.user.{ RegisterUser, RegisterUserWrapper, UserLoginWrapper }
-import com.real.world.http4s.security.{ JwtAuthenticator, PasswordHasher }
-import com.real.world.http4s.service.UserService
+import org.http4s._
 
 import cats.effect.Async
 import cats.implicits._
 
-import org.http4s._
+import com.colisweb.tracing.core.TracingContextBuilder
+import com.colisweb.tracing.http.server.TracedHttpRoutes
+import com.colisweb.tracing.http.server.TracedHttpRoutes.using
+
+import com.real.world.http4s.http.BaseHttp4s
+import com.real.world.http4s.model.user.{ RegisterUser, RegisterUserWrapper, UserLoginWrapper }
+import com.real.world.http4s.authentication.JwtAuthenticator
+import com.real.world.http4s.service.UserService
+
 import io.chrisdavenport.log4cats.Logger
 
-class AuthenticationHttpRoutes[F[_]: Async: Logger]()(
+class AuthenticationHttpRoutes[F[_]: Async: Logger: TracingContextBuilder]()(
     implicit userService: UserService[F],
-    passwordHasher: PasswordHasher[F],
     jwtAuthenticator: JwtAuthenticator[F]
 ) extends BaseHttp4s[F] {
 
-  val routes: HttpRoutes[F] = HttpRoutes.of[F] {
-
-    case req @ POST -> Root =>
+  val routes: HttpRoutes[F] = TracedHttpRoutes[F] {
+    case (req @ POST -> Root) using traceContext =>
       req.decode[RegisterUserWrapper] { userRegisterWrapper =>
         val userRegisterRequestIn: RegisterUser = userRegisterWrapper.user
-        (for {
+        for {
           user                   <- userService.registerUser(userRegisterRequestIn)
-          userResponseOutWrapper <- user.toUserResponseOutWrapper()
-        } yield userResponseOutWrapper).toResponse
+          userResponseOutWrapper <- user.toUserResponseOutWrapper
+          response               <- Ok(userResponseOutWrapper)
+        } yield response
       }
 
-    case req @ POST -> Root / "login" =>
+    case (req @ POST -> Root / "login") using traceContext =>
       req.decode[UserLoginWrapper] { userLoginWrapper =>
         val userLogin = userLoginWrapper.user
-        (for {
+        for {
           user                   <- userService.loginUser(userLogin)
-          userResponseOutWrapper <- user.toUserResponseOutWrapper()
-        } yield userResponseOutWrapper).toResponse
+          userResponseOutWrapper <- user.toUserResponseOutWrapper
+          response               <- Ok(userResponseOutWrapper)
+        } yield response
       }
   }
 }
 
 object AuthenticationHttpRoutes {
-  def apply[F[_]: Async: Logger: UserService: PasswordHasher: JwtAuthenticator](): AuthenticationHttpRoutes[F] = new AuthenticationHttpRoutes[F]()
+  def apply[F[_]: Async: Logger: UserService: JwtAuthenticator: TracingContextBuilder](): AuthenticationHttpRoutes[F] =
+    new AuthenticationHttpRoutes[F]()
 }

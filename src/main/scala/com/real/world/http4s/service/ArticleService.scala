@@ -1,32 +1,31 @@
 package com.real.world.http4s.service
 
-import com.real.world.http4s.AppError
-import com.real.world.http4s.AppError.ArticleNotFound
-import com.real.world.http4s.model.{ ArticleValidators, Pagination }
-import com.real.world.http4s.model.article.Article.{ ArticleId, FavoritesCount, Slug }
-import com.real.world.http4s.model.article.{ Article, CreateArticle, IsFavorited, UpdateArticle }
-import com.real.world.http4s.model.profile.{ IsFollowing, Profile }
-import com.real.world.http4s.model.tag.Tag
-import com.real.world.http4s.model.tag.Tag.TagName
-import com.real.world.http4s.model.user.User.{ UserId, Username }
-import com.real.world.http4s.repository.algebra.ArticleRepositoryAlgebra
-import com.real.world.http4s.model.article.{ Article, CreateArticle, IsFavorited, UpdateArticle }
-import com.real.world.http4s.model.{ profile, ArticleValidators, Pagination }
-import com.real.world.http4s.model.profile.{ IsFollowing, Profile }
-import com.real.world.http4s.model.tag.Tag
-import com.real.world.http4s.repository.algebra.ArticleRepositoryAlgebra
-import io.chrisdavenport.log4cats.Logger
-
 import cats.data.NonEmptyList
 import cats.effect.{ Async, Sync }
 import cats.implicits._
+
+import com.real.world.http4s.AppError.ArticleNotFound
+import com.real.world.http4s.model._
+import com.real.world.http4s.model.article.{ Article, CreateArticle, IsFavorited, UpdateArticle }
+import com.real.world.http4s.model.article.{ Article, CreateArticle, IsFavorited, UpdateArticle }
+import com.real.world.http4s.model.profile.{ IsFollowing, Profile }
+import com.real.world.http4s.model.profile.{ IsFollowing, Profile }
+import com.real.world.http4s.model.tag.Tag
+import com.real.world.http4s.model.tag.Tag
+import com.real.world.http4s.model.tag.Tag.TagName
+import com.real.world.http4s.model.{ profile, Pagination }
+import com.real.world.http4s.repository.algebra.ArticleRepositoryAlgebra
+import com.real.world.http4s.repository.algebra.ArticleRepositoryAlgebra
+
+import eu.timepit.refined.types.numeric.NonNegInt
+import io.chrisdavenport.log4cats.Logger
 
 class ArticleService[F[_]: Async: Logger]()(
     implicit articlesRepositoryAlgebra: ArticleRepositoryAlgebra[F],
     userService: UserService[F],
     tagService: TagService[F],
     followerService: FollowerService[F]
-) extends ArticleValidators {
+) {
 
   def createArticle(
       createArticle: CreateArticle,
@@ -34,8 +33,7 @@ class ArticleService[F[_]: Async: Logger]()(
   ): F[(Article, List[Tag])] =
     for {
       _                <- Logger[F].trace(s"Creating article with user: [$userId] and data: [$createArticle]")
-      _                <- validateCreateArticle(createArticle)
-      article          <- createArticle.toArticle(userId).pure[F]
+      article          <- Article.fromCreateArticle(createArticle, userId).pure[F]
       persistedArticle <- articlesRepositoryAlgebra.createArticle(article)
       tags <- createArticle.tagList.fold(List.empty[Tag].pure[F]) { tagInList =>
         for {
@@ -46,23 +44,21 @@ class ArticleService[F[_]: Async: Logger]()(
       _ <- Logger[F].trace("Article is created successfully.")
     } yield (persistedArticle, tags)
 
-  def updateArticle(articleUpdateIn: UpdateArticle, slug: Slug, userId: UserId): F[Article] =
+  def updateArticle(updateArticle: UpdateArticle, slug: Slug, userId: UserId): F[Article] =
     for {
-      _       <- Logger[F].trace(s"Updating article with user: [$userId], data: [$articleUpdateIn] and slug: [$slug]")
+      _       <- Logger[F].trace(s"Updating article with user: [$userId], data: [$updateArticle] and slug: [$slug]")
       article <- findArticleBySlug(slug)
       _ <- Sync[F].ifM((article.authorId == userId).pure[F])(
         article.pure[F],
         Logger[F].warn(s"User [$userId] attempt to update unauthorized article; id=[${article.id}] slug=[${article.slug}]") *>
         ArticleNotFound(s"Article with slug [$slug] not found").raiseError[F, Article]
       )
-      updatedArticle = articleUpdateIn.merge(article)
+      updatedArticle = Article.fromUpdateArticle(article, updateArticle)
       updatedArticleAsOpt    <- articlesRepositoryAlgebra.updateArticle(updatedArticle)
       _                      <- Logger[F].warn(s"Article with slug: [$slug] is not found").whenA(updatedArticleAsOpt.isEmpty)
       persistedUpdateArticle <- Sync[F].fromOption(updatedArticleAsOpt, ArticleNotFound(s"Article with slug [$slug] is not found"))
       _                      <- Logger[F].trace("Article is updated successfully.")
     } yield persistedUpdateArticle
-
-  import mouse.all._
 
   def findArticleBySlug(slug: Slug): F[Article] =
     for {
@@ -107,7 +103,7 @@ class ArticleService[F[_]: Async: Logger]()(
   def findFavoritedCount(articleId: ArticleId): F[FavoritesCount] =
     articlesRepositoryAlgebra
       .findFavoritedRecordsByArticleId(articleId)
-      .map(favoritedRecordsList => FavoritesCount(favoritedRecordsList.size))
+      .map(favoritedRecordsList => FavoritesCount(NonNegInt.unsafeFrom(favoritedRecordsList.size)))
 
   def fetchArticle(slug: Slug, optionalUserId: Option[UserId]): F[(Article, Profile, List[Tag], IsFavorited, FavoritesCount)] =
     for {
@@ -166,7 +162,7 @@ class ArticleService[F[_]: Async: Logger]()(
         val articleTags = tags.getOrElse(article.id, List.empty[Tag]) // Todo test your test setup to see exact error
         // val articleTags    = tags(article.id)
         val isFavorited    = IsFavorited(isFavoriteds.contains(article.id))
-        val favoritedCount = articleFavoriteCounts.getOrElse(article.id, FavoritesCount(0))
+        val favoritedCount = articleFavoriteCounts.getOrElse(article.id, zeroFavorites)
         (article, profile, articleTags, isFavorited, favoritedCount)
       }
     }

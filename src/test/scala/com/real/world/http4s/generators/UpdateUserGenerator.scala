@@ -1,8 +1,9 @@
 package com.real.world.http4s.generators
 
-import com.real.world.http4s.model.user.UpdateUserWrapper
 import com.real.world.http4s.model.user
+import com.real.world.http4s.model.user.UpdateUserWrapper
 import com.real.world.http4s.model.user.{ UpdateUser, UpdateUserWrapper }
+
 import org.scalacheck.Gen
 
 object UpdateUserGenerator extends ValueClassGens {

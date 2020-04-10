@@ -1,14 +1,12 @@
 package com.real.world.http4s.model.user
 
-import com.real.world.http4s.model.user.User.{ Bio, Email, HashedPassword, Image, UserId, Username }
-import com.real.world.http4s.security.{ JwtAuthenticator, PasswordHasher }
-import com.real.world.http4s.security.{ JwtAuthenticator, PasswordHasher }
-
-import io.circe.Codec
-import io.circe.generic.extras.semiauto.deriveUnwrappedCodec
-
 import cats.effect.Sync
 import cats.implicits._
+
+import com.real.world.http4s.model._
+import com.real.world.http4s.authentication.{ JwtAuthenticator, PasswordHasher }
+
+import eu.timepit.refined.auto._
 
 final case class User(
     id: UserId,
@@ -20,24 +18,6 @@ final case class User(
 )
 
 object User {
-
-  // Value classes
-  case class UserId(value: Int) extends AnyVal
-  case class Username(value: String) extends AnyVal
-  case class PlainTextPassword(value: String) extends AnyVal
-  case class HashedPassword(value: String) extends AnyVal
-  case class Email(value: String) extends AnyVal
-  case class Bio(value: String) extends AnyVal
-  case class Image(value: String) extends AnyVal
-  case class Token(value: String) extends AnyVal
-
-  implicit val UserIdCodec: Codec[UserId]                       = deriveUnwrappedCodec[UserId]
-  implicit val UsernameCodec: Codec[Username]                   = deriveUnwrappedCodec[Username]
-  implicit val PlainTextPasswordCodec: Codec[PlainTextPassword] = deriveUnwrappedCodec[PlainTextPassword]
-  implicit val EmailCodec: Codec[Email]                         = deriveUnwrappedCodec[Email]
-  implicit val BioCodec: Codec[Bio]                             = deriveUnwrappedCodec[Bio]
-  implicit val ImageCodec: Codec[Image]                         = deriveUnwrappedCodec[Image]
-  implicit val TokenCodec: Codec[Token]                         = deriveUnwrappedCodec[Token]
 
   def apply[F[_]: Sync](id: UserId, email: Email, plainTextPassword: PlainTextPassword, username: Username, bio: Option[Bio], image: Option[Image])(
       implicit passwordHasher: PasswordHasher[F]
@@ -51,7 +31,7 @@ object User {
     def toUserResponseOutWrapper[F[_]: Sync]()(implicit jwtAuthenticator: JwtAuthenticator[F]): F[UserResponseWrapper] =
       for {
         token  <- jwtAuthenticator.generateJwt(user.id)
-        result <- UserResponseWrapper(UserResponse(user.email, Token(token), user.username, user.bio, user.image)).pure[F]
+        result <- UserResponseWrapper(UserResponse(user.email, token, user.username, user.bio, user.image)).pure[F]
       } yield result
   }
 

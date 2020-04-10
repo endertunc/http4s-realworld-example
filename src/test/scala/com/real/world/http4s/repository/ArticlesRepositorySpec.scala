@@ -1,11 +1,14 @@
 package com.real.world.http4s.repository
 
 import cats.data.NonEmptyList
+import cats.effect.IO
+
+import doobie.scalatest.IOChecker
+
 import com.real.world.http4s.base.ServicesAndRepos
 import com.real.world.http4s.generators.ArticleGenerator
+
 import org.scalatest.flatspec.AnyFlatSpec
-import cats.effect.IO
-import doobie.scalatest.IOChecker
 
 class ArticlesRepositorySpec extends AnyFlatSpec with IOChecker with ServicesAndRepos {
 

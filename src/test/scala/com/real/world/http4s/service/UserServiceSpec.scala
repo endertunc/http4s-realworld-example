@@ -1,18 +1,18 @@
 package com.real.world.http4s.service
 
+import cats.data.NonEmptyList
+
 import com.real.world.http4s.AppError.{ PasswordHashFailed, UserAlreadyExist, UserNotFound }
 import com.real.world.http4s.base.ServicesAndRepos
-import com.real.world.http4s.generators.{ UpdateUserGenerator, UserGenerator, UserLoginGenerator, UserRegisterGenerator }
-import com.real.world.http4s.model.profile.IsFollowing.NotFollowing
-import com.real.world.http4s.model.profile.IsFollowing.Following
-import com.real.world.http4s.model.user.User.PlainTextPassword
+import com.real.world.http4s.generators._
+import com.real.world.http4s.model.PlainTextPassword
+import com.real.world.http4s.model.profile.IsFollowing.{ Following, NotFollowing }
 import com.real.world.http4s.model.user.UserLogin
-import com.real.world.http4s.AppError.{ PasswordHashFailed, UserAlreadyExist, UserNotFound }
-import com.real.world.http4s.generators.{ UpdateUserGenerator, UserGenerator, UserLoginGenerator, UserRegisterGenerator }
 
-import cats.data.NonEmptyList
-import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.OptionValues
+import org.scalatest.flatspec.AsyncFlatSpec
+
+import eu.timepit.refined.auto._
 
 class UserServiceSpec extends AsyncFlatSpec with ServicesAndRepos with OptionValues {
 

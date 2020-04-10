@@ -1,6 +1,7 @@
 package com.real.world.http4s.generators
 
 import com.real.world.http4s.model.tag.TagIn
+
 import org.scalacheck.Gen
 
 object TagGenerator {

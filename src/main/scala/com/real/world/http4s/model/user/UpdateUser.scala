@@ -1,21 +1,19 @@
 package com.real.world.http4s.model.user
 
-import com.real.world.http4s.json.CirceSchemaValidatorWrapper
-import com.real.world.http4s.model.UserValidators
-import com.real.world.http4s.model.user.User.{ Bio, Email, Image, PlainTextPassword, Username }
-import com.real.world.http4s.security.PasswordHasher
-import com.real.world.http4s.json.CirceSchemaValidatorWrapper
-import com.real.world.http4s.model.UserValidators
-import com.real.world.http4s.model.user.User.{ Bio, Email, Image, PlainTextPassword, Username }
-import com.real.world.http4s.security.PasswordHasher
-import io.chrisdavenport.log4cats.Logger
-import json.Schema
-import mouse.all._
+import cats.effect.Sync
 
 import io.circe.Decoder
 import io.circe.generic.semiauto.deriveDecoder
+import io.circe.refined._
+import io.circe.refined._
 
-import cats.effect.Sync
+import com.real.world.http4s.model.Instances._
+import com.real.world.http4s.model.Instances._
+import com.real.world.http4s.model._
+import com.real.world.http4s.authentication.PasswordHasher
+
+import io.chrisdavenport.log4cats.Logger
+import mouse.all._
 
 final case class UpdateUser(
     email: Option[Email],
@@ -27,7 +25,7 @@ final case class UpdateUser(
 
 final case class UpdateUserWrapper(user: UpdateUser)
 
-object UpdateUser extends UserValidators {
+object UpdateUser {
 
   implicit val UpdateUserDecoder: Decoder[UpdateUser] = deriveDecoder[UpdateUser]
 
@@ -36,7 +34,6 @@ object UpdateUser extends UserValidators {
 
     def toUser[F[_]: Sync: Logger](user: User)(implicit tsecPasswordHasher: PasswordHasher[F]): F[User] =
       for {
-        _ <- validateUpdateUser(userUpdateRequestIn)
         hashedPassword <- userUpdateRequestIn.password match {
           case Some(password) => tsecPasswordHasher.hash(password)
           case None           => user.hashedPassword |> (Sync[F].delay(_))
@@ -57,8 +54,5 @@ object UpdateUser extends UserValidators {
 
 object UpdateUserWrapper {
   implicit val UpdateUserWrapperDecoder: Decoder[UpdateUserWrapper] = deriveDecoder[UpdateUserWrapper]
-  implicit val UpdateUserWrapperSchema: Schema[UpdateUserWrapper]   = json.Json.schema[UpdateUserWrapper]
-  implicit val UpdateUserWrapperValidatorImpl: CirceSchemaValidatorWrapper[UpdateUserWrapper] =
-    new CirceSchemaValidatorWrapper[UpdateUserWrapper]("UpdateUserWrapper")
 
 }

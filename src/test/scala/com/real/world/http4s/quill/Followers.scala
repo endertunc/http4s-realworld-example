@@ -2,15 +2,17 @@ package com.real.world.http4s.quill
 
 import java.time.Instant
 
-import com.real.world.http4s.model.user.User.UserId
-import com.real.world.http4s.quill.DoobiePostgresContext._
-import io.getquill.{ idiom => _ }
-
 import cats.effect.IO
 
 import doobie.syntax.connectionio.toConnectionIOOps
 
-object Followers {
+import com.real.world.http4s.model.UserId
+import com.real.world.http4s.quill.DoobiePostgresContext._
+import com.real.world.http4s.repository.QuillSupport
+
+import io.getquill.{ idiom => _ }
+
+object Followers extends QuillSupport {
 
   case class Followers(followee: UserId, follower: UserId, insertedAt: Instant)
 

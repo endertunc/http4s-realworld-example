@@ -1,12 +1,13 @@
 package com.real.world.http4s.service
 
-import com.real.world.http4s.model.profile.IsFollowing
-import com.real.world.http4s.model.user.User.UserId
-import com.real.world.http4s.repository.algebra.FollowerRepositoryAlgebra
-import io.chrisdavenport.log4cats.Logger
-
 import cats.effect.Async
 import cats.implicits._
+
+import com.real.world.http4s.model._
+import com.real.world.http4s.model.profile.IsFollowing
+import com.real.world.http4s.repository.algebra.FollowerRepositoryAlgebra
+
+import io.chrisdavenport.log4cats.Logger
 
 class FollowerService[F[_]: Async: Logger]()(implicit followersRepositoryAlgebra: FollowerRepositoryAlgebra[F]) {
 

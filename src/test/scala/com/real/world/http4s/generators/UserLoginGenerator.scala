@@ -1,7 +1,8 @@
 package com.real.world.http4s.generators
 
-import com.real.world.http4s.model.user.{ RegisterUser, UserLogin, UserLoginWrapper }
 import com.real.world.http4s.model.user
+import com.real.world.http4s.model.user.{ RegisterUser, UserLogin, UserLoginWrapper }
+
 import org.scalacheck.Gen
 
 object UserLoginGenerator extends ValueClassGens {

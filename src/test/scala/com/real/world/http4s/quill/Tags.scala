@@ -1,15 +1,17 @@
 package com.real.world.http4s.quill
 
-import com.real.world.http4s.model.article.Article.ArticleId
-import com.real.world.http4s.model.tag.Tag.TagId
-import com.real.world.http4s.quill.DoobiePostgresContext._
-import io.getquill.{ idiom => _ }
-
 import cats.effect.IO
 
 import doobie.syntax.connectionio.toConnectionIOOps
 
-object Tags {
+import com.real.world.http4s.model.ArticleId
+import com.real.world.http4s.model.tag.Tag.TagId
+import com.real.world.http4s.quill.DoobiePostgresContext._
+import com.real.world.http4s.repository.QuillSupport
+
+import io.getquill.{ idiom => _ }
+
+object Tags extends QuillSupport {
 
   case class ArticlesTags(id: Int, articleId: ArticleId, tagId: TagId)
 

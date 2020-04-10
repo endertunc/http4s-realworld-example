@@ -1,6 +1,6 @@
 package com.real.world.http4s.repository.algebra
 
-import com.real.world.http4s.model.user.User.UserId
+import com.real.world.http4s.model._
 
 trait FollowerRepositoryAlgebra[F[_]] {
 

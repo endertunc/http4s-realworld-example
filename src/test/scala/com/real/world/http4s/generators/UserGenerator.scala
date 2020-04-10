@@ -1,12 +1,13 @@
 package com.real.world.http4s.generators
 
-import com.real.world.http4s.security.PasswordHasher
+import cats.effect.IO
+
 import com.real.world.http4s.model.user
 import com.real.world.http4s.model.user.User
-import com.real.world.http4s.security.PasswordHasher
-import org.scalacheck.Gen
+import com.real.world.http4s.authentication.PasswordHasher
+import com.real.world.http4s.authentication.PasswordHasher
 
-import cats.effect.IO
+import org.scalacheck.Gen
 
 object UserGenerator extends ValueClassGens {
 

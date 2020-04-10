@@ -1,9 +1,11 @@
 package com.real.world.http4s.model.user
 
-import User.{ Bio, Email, Image, Token, Username }
-
 import io.circe.Encoder
 import io.circe.generic.semiauto.deriveEncoder
+import io.circe.refined._
+
+import com.real.world.http4s.model.Instances._
+import com.real.world.http4s.model._
 
 final case class UserResponse(email: Email, token: Token, username: Username, bio: Option[Bio], image: Option[Image])
 final case class UserResponseWrapper(user: UserResponse)

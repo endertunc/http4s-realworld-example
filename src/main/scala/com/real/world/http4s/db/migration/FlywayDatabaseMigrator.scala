@@ -1,13 +1,10 @@
-package com.real.world.http4s.db
+package com.real.world.http4s.db.migration
 
 import scala.concurrent.ExecutionContext
-
+import cats.effect.{ Async, Blocker, ContextShift, Resource, Sync }
+import doobie.hikari.HikariTransactor
 import com.real.world.http4s.config.AppConfig.DatabaseConfig
 import org.flywaydb.core.Flyway
-
-import cats.effect.{ Async, Blocker, ContextShift, Resource, Sync }
-
-import doobie.hikari.HikariTransactor
 
 // ToDo everything needs to behind a Trait!
 // $COVERAGE-OFF$

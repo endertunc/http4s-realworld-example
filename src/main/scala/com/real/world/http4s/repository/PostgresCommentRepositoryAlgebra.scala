@@ -2,19 +2,6 @@ package com.real.world.http4s.repository
 
 import java.time.Instant
 
-import com.real.world.http4s.AppError.RecordNotFound
-import com.real.world.http4s.model.comment.Comment.{ CommentBody, CommentId }
-import com.real.world.http4s.model.article.Article.ArticleId
-import com.real.world.http4s.model.comment.Comment
-import com.real.world.http4s.model.profile.{ IsFollowing, Profile }
-import com.real.world.http4s.model.user.User
-import com.real.world.http4s.model.user.User.UserId
-import com.real.world.http4s.repository.algebra.CommentRepositoryAlgebra
-import com.real.world.http4s.model.comment.Comment
-import com.real.world.http4s.model.profile.{ IsFollowing, Profile }
-import com.real.world.http4s.model.user.User
-import com.real.world.http4s.repository.algebra.CommentRepositoryAlgebra
-
 import cats.data.NonEmptyList
 import cats.effect.Async
 import cats.free.Free
@@ -24,6 +11,19 @@ import doobie._
 import doobie.free.connection
 import doobie.implicits._
 import doobie.implicits.legacy.instant.JavaTimeInstantMeta
+import doobie.refined.implicits._
+import doobie.refined.implicits._
+
+import com.real.world.http4s.AppError.RecordNotFound
+import com.real.world.http4s.model.Instances._
+import com.real.world.http4s.model._
+import com.real.world.http4s.model.comment.Comment
+import com.real.world.http4s.model.comment.Comment.CommentId
+import com.real.world.http4s.model.profile.{ Profile, IsFollowing }
+import com.real.world.http4s.model.user.User
+import com.real.world.http4s.repository.algebra.CommentRepositoryAlgebra
+
+import eu.timepit.refined.auto._
 import io.chrisdavenport.log4cats.Logger
 
 class PostgresCommentRepositoryAlgebra[F[_]: Async: Logger]()(implicit xa: Transactor[F]) extends CommentRepositoryAlgebra[F] {
@@ -81,8 +81,9 @@ object PostgresCommentRepositoryAlgebra {
 }
 
 object CommentStatement {
+
   import QuillSupport.DoobiePostgresContext._
-  import QuillSupport.{ instanceEncoder, instantDecoder }
+  import QuillSupport._
 
   implicit private val commentInsertMeta = insertMeta[Comment](_.id)
 
@@ -101,13 +102,13 @@ object CommentStatement {
   def createComment[F[_]: Async](commentBody: CommentBody, articleId: ArticleId, authorId: UserId): F[doobie.ConnectionIO[Comment]] =
     Async[F]
       .delay(Instant.now)
-      .map(now => run(quote(comments.insert(lift(Comment(CommentId(-1), commentBody, articleId, authorId, now, now))).returning(comment => comment))))
+      .map(now => run(quote(comments.insert(lift(Comment(CommentId(1), commentBody, articleId, authorId, now, now))).returning(comment => comment))))
 
   def findCommentsWithAuthorByArticleId(articleId: ArticleId): doobie.Query0[(Comment, User)] =
     sql"""
           SELECT
           c.id, c.body, c.article_id, c.author_id, c.created_at, c.updated_at,
-          u.id, u.email, u.password, u.username, u.bio, u.image 
+          u.id, u.email, u.password, u.username, u.bio, u.image
           FROM comments c
           INNER JOIN users u ON c.author_id = u.id
           WHERE c.article_id=$articleId""".query[(Comment, User)]

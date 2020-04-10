@@ -1,13 +1,11 @@
 package com.real.world.http4s.repository.algebra
 
-import com.real.world.http4s.model.article.Article.{ ArticleId, FavoritesCount, Slug }
-import com.real.world.http4s.model.tag.Tag.TagName
-import com.real.world.http4s.model.user.User.{ UserId, Username }
-import com.real.world.http4s.model.{ FavoritedRecord, Pagination }
-import com.real.world.http4s.model.{ FavoritedRecord, Pagination }
-import com.real.world.http4s.model.article.Article
-
 import cats.data.NonEmptyList
+
+import com.real.world.http4s.model._
+import com.real.world.http4s.model.article.Article
+import com.real.world.http4s.model.tag.Tag.TagName
+import com.real.world.http4s.model.{ FavoritedRecord, Pagination }
 
 trait ArticleRepositoryAlgebra[F[_]] {
   // read

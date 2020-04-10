@@ -1,21 +1,19 @@
 package com.real.world.http4s.quill
 
-import com.real.world.http4s.generators.ArticleGenerator
-import com.real.world.http4s.model.article.Article
-import com.real.world.http4s.model.article.Article.{ ArticleId, Slug }
-import com.real.world.http4s.model.user.User.UserId
-import com.real.world.http4s.quill.DoobiePostgresContext._
-import com.real.world.http4s.security.PasswordHasher
-import com.real.world.http4s.generators.ArticleGenerator
-import com.real.world.http4s.model.article.Article
-import com.real.world.http4s.security.PasswordHasher
-
-import doobie.syntax.connectionio.toConnectionIOOps
-import io.getquill.{ idiom => _ }
-
 import cats.effect.IO
 
-object Articles {
+import doobie.syntax.connectionio.toConnectionIOOps
+
+import com.real.world.http4s.generators.ArticleGenerator
+import com.real.world.http4s.model.article.Article
+import com.real.world.http4s.model.{ ArticleId, Slug, UserId }
+import com.real.world.http4s.quill.DoobiePostgresContext._
+import com.real.world.http4s.repository.QuillSupport
+import com.real.world.http4s.authentication.PasswordHasher
+
+import io.getquill.{ idiom => _ }
+
+object Articles extends QuillSupport {
   case class Favorite(id: Int, userId: UserId, articleId: ArticleId)
 
   implicit private val articleInsertMeta  = insertMeta[Article](_.id)
