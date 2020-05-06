@@ -13,9 +13,9 @@ class SCryptPasswordHasher[F[_]: Sync](hasher: PasswordHashAPI[SCrypt])(implicit
     extends PasswordHasher[F] {
 
   override def hash(plainTextPassword: PlainTextPassword): F[HashedPassword] =
-    hasher.hashpw[F](plainTextPassword.value.value).map(HashedPassword.apply)
+    hasher.hashpw[F](plainTextPassword.value.value).map(HashedPassword.unsafeFrom)
 
   override def checkHash(plainTextPassword: PlainTextPassword, hashedPassword: HashedPassword): F[Boolean] =
-    hasher.checkpw[F](plainTextPassword.value.value, PasswordHash.apply[SCrypt](hashedPassword.value)).map(_ == Verified)
+    hasher.checkpw[F](plainTextPassword.value.value, PasswordHash.apply[SCrypt](hashedPassword.value.value)).map(_ == Verified)
 
 }

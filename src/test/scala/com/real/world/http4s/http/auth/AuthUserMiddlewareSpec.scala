@@ -5,16 +5,16 @@ import org.http4s.headers.Authorization
 import org.http4s.{ Status, _ }
 import cats.effect.IO
 import com.real.world.http4s.AppError.{ InvalidAuthorizationHeader, MissingAuthorizationHeader }
-import com.real.world.http4s.base.ServicesAndRepos
-import com.real.world.http4s.model.UserId
+import com.real.world.http4s.RealWorldApp
 import com.real.world.http4s.authentication.JwtAuthenticator
 import com.real.world.http4s.http.middleware.AuthUserMiddleware
+import com.real.world.http4s.model.UserId
 import com.real.world.http4s.{ model, AppError }
 import org.scalatest.flatspec.AsyncFlatSpec
 import org.scalatest.{ EitherValues, OptionValues }
 import eu.timepit.refined.auto._
 
-class AuthUserMiddlewareSpec extends AsyncFlatSpec with ServicesAndRepos with OptionValues with EitherValues {
+class AuthUserMiddlewareSpec extends AsyncFlatSpec with RealWorldApp with OptionValues with EitherValues {
 
   implicit val dummyJwtAuthenticator: JwtAuthenticator[IO] = new JwtAuthenticator[IO] {
     override def generateJwt(userId: UserId): IO[model.Token] = IO.delay(model.Token("FakeToken"))

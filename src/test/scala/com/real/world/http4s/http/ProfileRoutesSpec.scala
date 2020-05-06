@@ -5,20 +5,16 @@ import org.http4s.circe.{ CirceEntityDecoder, CirceEntityEncoder }
 import org.http4s.headers.Authorization
 import org.http4s.implicits._
 import org.http4s.{ Headers, Method, Request }
-
 import cats.effect.IO
-
+import com.real.world.http4s.RealWorldApp
 import io.circe.Decoder
 import io.circe.generic.semiauto.deriveDecoder
 import io.circe.refined._
-
-import com.real.world.http4s.base.ServicesAndRepos
-import com.real.world.http4s.model.Instances._
+import com.real.world.http4s.model.NewTypeImplicits._
 import com.real.world.http4s.model.profile.{ IsFollowing, Profile, ProfileResponseOutWrapper }
-
 import org.scalatest.flatspec.AsyncFlatSpec
 
-class ProfileRoutesSpec extends AsyncFlatSpec with ServicesAndRepos with CirceEntityDecoder with CirceEntityEncoder {
+class ProfileRoutesSpec extends AsyncFlatSpec with RealWorldApp with CirceEntityDecoder with CirceEntityEncoder {
 
   implicit val ProfileDecoder: Decoder[Profile]                                     = deriveDecoder[Profile]
   implicit val ProfileResponseOutWrapperDecoder: Decoder[ProfileResponseOutWrapper] = deriveDecoder[ProfileResponseOutWrapper]

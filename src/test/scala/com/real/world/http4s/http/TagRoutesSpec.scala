@@ -2,20 +2,18 @@ package com.real.world.http4s.http
 
 import org.http4s.circe.{ CirceEntityDecoder, CirceEntityEncoder }
 import org.http4s.implicits._
-import org.http4s.{ Request, Method }
-
+import org.http4s.{ Method, Request }
 import cats.effect.IO
-
+import com.real.world.http4s.RealWorldApp
 import io.circe.Decoder
 import io.circe.generic.semiauto.deriveDecoder
-
-import com.real.world.http4s.base.ServicesAndRepos
+import io.circe.refined._
 import com.real.world.http4s.generators.TagGenerator
+import com.real.world.http4s.model.NewTypeImplicits._
 import com.real.world.http4s.model.tag.TagResponse
-
 import org.scalatest.flatspec.AsyncFlatSpec
 
-class TagRoutesSpec extends AsyncFlatSpec with ServicesAndRepos with CirceEntityDecoder with CirceEntityEncoder {
+class TagRoutesSpec extends AsyncFlatSpec with RealWorldApp with CirceEntityDecoder with CirceEntityEncoder {
 
   implicit val TagResponseDecoder: Decoder[TagResponse] = deriveDecoder[TagResponse]
 
@@ -31,7 +29,8 @@ class TagRoutesSpec extends AsyncFlatSpec with ServicesAndRepos with CirceEntity
       _           <- ctx.tagService.createTags(tagIns)
       response    <- ctx.httpApp.run(request)
       tagResponse <- response.as[TagResponse]
-    } yield tagResponse.tags.filter(t => tagIns.exists(p => p.name == t.name)) should have size 2
+    } yield tagResponse.tags should have size 2
+//    } yield tagResponse.tags.filter(t => tagIns.exists(p => p.value.value == t.value.value)) should have size 2
 
   }
 

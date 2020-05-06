@@ -7,7 +7,7 @@ import doobie.Meta
 import io.estatico.newtype.Coercible
 import io.estatico.newtype.ops._
 
-object Instances {
+object NewTypeImplicits {
 
   implicit def coercibleDecoder[A: Coercible[B, *], B: Decoder]: Decoder[A] =
     Decoder[B].map(_.coerce[A])

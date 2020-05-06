@@ -1,27 +1,30 @@
 package com.real.world.http4s.generators
 
-import com.real.world.http4s.model.user
-import com.real.world.http4s.model.user.{ RegisterUser, UserLogin, UserLoginWrapper }
+import com.real.world.http4s.model.user.{ RegisterUserInput, RegisterUserRequest, UserLoginInput, UserLoginInputWrapper, UserLoginRequest }
 
 import org.scalacheck.Gen
 
-object UserLoginGenerator extends ValueClassGens {
+object UserLoginGenerator extends GeneratorsBase {
 
-  private val userLoginRequestInGen: Gen[UserLogin] =
+  private val userLoginRequestInGen: Gen[UserLoginInput] =
     for {
       email    <- emailGen
       password <- passwordGen
-    } yield user.UserLogin(
-      email    = email,
-      password = password
+    } yield UserLoginInput(
+      email    = email.value.value,
+      password = password.value.value
     )
 
-  def generateUserLogin: UserLogin               = userLoginRequestInGen.sample.get
-  def generateUserLoginWrapper: UserLoginWrapper = UserLoginWrapper(userLoginRequestInGen.sample.get)
+  def generateUserLogin: UserLoginInput               = userLoginRequestInGen.sample.get
+  def generateUserLoginWrapper: UserLoginInputWrapper = UserLoginInputWrapper(userLoginRequestInGen.sample.get)
 
-  def fromUserRegister(userRegisterRequestIn: RegisterUser): UserLogin =
-    UserLogin(userRegisterRequestIn.email, userRegisterRequestIn.password)
+  def fromUserRegister(userRegisterRequestIn: RegisterUserInput): UserLoginInput =
+    UserLoginInput(userRegisterRequestIn.email, userRegisterRequestIn.password)
 
-//  def fromUserRegister(userRegisterRequestIn: RegisterUser): UserLoginWrapper =
-//    UserLoginWrapper(UserLogin(userRegisterRequestIn.email, userRegisterRequestIn.password))
+  def fromUserRegisterRequest(registerUserRequest: RegisterUserRequest): UserLoginRequest =
+    UserLoginRequest(registerUserRequest.email, registerUserRequest.password)
+
+  def fromUserRegisterRequestToUserLoginInput(registerUserRequest: RegisterUserRequest): UserLoginInput =
+    UserLoginInput(registerUserRequest.email.value.value, registerUserRequest.password.value.value)
+
 }

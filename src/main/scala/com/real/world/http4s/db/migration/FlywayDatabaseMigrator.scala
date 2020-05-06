@@ -1,12 +1,16 @@
 package com.real.world.http4s.db.migration
 
 import scala.concurrent.ExecutionContext
+
 import cats.effect.{ Async, Blocker, ContextShift, Resource, Sync }
+
 import doobie.hikari.HikariTransactor
+
 import com.real.world.http4s.config.AppConfig.DatabaseConfig
+
 import org.flywaydb.core.Flyway
 
-// ToDo everything needs to behind a Trait!
+// ToDo move it behind a trait!
 // $COVERAGE-OFF$
 final class FlywayDatabaseMigrator[F[_]: Async: ContextShift] {
 
@@ -27,8 +31,7 @@ final class FlywayDatabaseMigrator[F[_]: Async: ContextShift] {
 }
 
 object FlywayDatabaseMigrator {
-  def apply[F[_]: Async: ContextShift]: FlywayDatabaseMigrator[F] =
-    new FlywayDatabaseMigrator()
+  def apply[F[_]: Async: ContextShift]: FlywayDatabaseMigrator[F] = new FlywayDatabaseMigrator()
 }
 
 // $COVERAGE-ON$

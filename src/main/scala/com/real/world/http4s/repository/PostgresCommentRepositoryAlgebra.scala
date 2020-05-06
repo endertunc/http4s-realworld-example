@@ -6,30 +6,29 @@ import cats.data.NonEmptyList
 import cats.effect.Async
 import cats.free.Free
 import cats.implicits._
-
+import com.colisweb.tracing.core.TracingContext
 import doobie._
 import doobie.free.connection
 import doobie.implicits._
 import doobie.implicits.legacy.instant.JavaTimeInstantMeta
 import doobie.refined.implicits._
 import doobie.refined.implicits._
-
 import com.real.world.http4s.AppError.RecordNotFound
-import com.real.world.http4s.model.Instances._
+import com.real.world.http4s.model.NewTypeImplicits._
 import com.real.world.http4s.model._
 import com.real.world.http4s.model.comment.Comment
 import com.real.world.http4s.model.comment.Comment.CommentId
-import com.real.world.http4s.model.profile.{ Profile, IsFollowing }
+import com.real.world.http4s.model.profile.{ IsFollowing, Profile }
 import com.real.world.http4s.model.user.User
 import com.real.world.http4s.repository.algebra.CommentRepositoryAlgebra
-
 import eu.timepit.refined.auto._
-import io.chrisdavenport.log4cats.Logger
+import io.chrisdavenport.log4cats.{ Logger, SelfAwareStructuredLogger }
 
-class PostgresCommentRepositoryAlgebra[F[_]: Async: Logger]()(implicit xa: Transactor[F]) extends CommentRepositoryAlgebra[F] {
+class PostgresCommentRepositoryAlgebra[F[_]: Async]()(implicit L: SelfAwareStructuredLogger[F], xa: Transactor[F])
+    extends CommentRepositoryAlgebra[F] {
 
   // ToDo what if there is no comment with that Id?
-  override def deleteByCommentIdAndAuthorId(commentId: CommentId, authorId: UserId): F[Unit] =
+  override def deleteByCommentIdAndAuthorId(commentId: CommentId, authorId: UserId)(implicit tracingContext: TracingContext[F]): F[Unit] =
     CommentStatement
       .deleteByCommentIdAuthorId(commentId, authorId)
       .transact(xa)
@@ -42,19 +41,23 @@ class PostgresCommentRepositoryAlgebra[F[_]: Async: Logger]()(implicit xa: Trans
         case effectedRows if effectedRows == 1 => ().pure[F]
       }
 
-  override def createComment(commentBody: CommentBody, articleId: ArticleId, authorId: UserId): F[Comment] =
+  override def createComment(commentBody: CommentBody, articleId: ArticleId, authorId: UserId)(
+      implicit tracingContext: TracingContext[F]
+  ): F[Comment] =
     for {
       query   <- CommentStatement.createComment[F](commentBody, articleId, authorId)
       comment <- query.transact(xa)
     } yield comment
 
-  override def findCommentsWithAuthorByArticleId(articleId: ArticleId): F[List[(Comment, User)]] =
+  override def findCommentsWithAuthorByArticleId(articleId: ArticleId)(implicit tracingContext: TracingContext[F]): F[List[(Comment, User)]] =
     CommentStatement
       .findCommentsWithAuthorByArticleId(articleId)
       .to[List]
       .transact(xa)
 
-  def findCommentsWithAuthor(articleId: ArticleId, userId: Option[UserId]): F[List[(Comment, Profile)]] = {
+  def findCommentsWithAuthor(articleId: ArticleId, userId: Option[UserId])(
+      implicit tracingContext: TracingContext[F]
+  ): F[List[(Comment, Profile)]] = {
     val query: Free[connection.ConnectionOp, List[(Comment, Profile)]] = for {
       commentsAndUsers <- CommentStatement
         .findCommentsWithAuthorByArticleId(articleId)
@@ -77,7 +80,7 @@ class PostgresCommentRepositoryAlgebra[F[_]: Async: Logger]()(implicit xa: Trans
 }
 
 object PostgresCommentRepositoryAlgebra {
-  def apply[F[_]: Async: Logger: Transactor](): CommentRepositoryAlgebra[F] = new PostgresCommentRepositoryAlgebra()
+  def apply[F[_]: Async: SelfAwareStructuredLogger: Transactor](): CommentRepositoryAlgebra[F] = new PostgresCommentRepositoryAlgebra()
 }
 
 object CommentStatement {

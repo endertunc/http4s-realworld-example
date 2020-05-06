@@ -2,25 +2,22 @@ package com.real.world.http4s.service
 
 import cats.data.NonEmptyList
 import cats.effect.IO
-
 import com.real.world.http4s.AppError.ArticleNotFound
-import com.real.world.http4s.base.ServicesAndRepos
+import com.real.world.http4s.RealWorldApp
 import com.real.world.http4s.generators.ArticleGenerator
-import com.real.world.http4s.model.article.IsFavorited.{ NotFavorited, Favorited }
-import com.real.world.http4s.model.{ Pagination, FavoritesCount }
+import com.real.world.http4s.model.article.IsFavorited.{ Favorited, NotFavorited }
+import com.real.world.http4s.model.{ FavoritesCount, Pagination }
 import com.real.world.http4s.quill.Articles
-
 import org.scalatest.OptionValues
 import org.scalatest.flatspec.AsyncFlatSpec
-
 import eu.timepit.refined.auto._
 
-class ArticleServiceSpec extends AsyncFlatSpec with ServicesAndRepos with OptionValues {
+class ArticleServiceSpec extends AsyncFlatSpec with RealWorldApp with OptionValues {
 
   "Article service" should "should create article" in IOSuit {
     for {
       persistedUser <- insertUser()
-      article = ArticleGenerator.generateCreateArticleWrapper.article
+      article = ArticleGenerator.generateCreateArticleRequest
       (persistedArticle, persistedTags) <- ctx.articleService.createArticle(
         article,
         persistedUser.id
@@ -238,12 +235,12 @@ class ArticleServiceSpec extends AsyncFlatSpec with ServicesAndRepos with Option
     for {
       persistedUser    <- insertUser()
       persistedArticle <- Articles.insertArticle(persistedUser.id)
-      updatedArticleRequestIn = ArticleGenerator.generateUpdateArticleWrapper.article
-      updatedArticle <- ctx.articleService.updateArticle(updatedArticleRequestIn, persistedArticle.slug, persistedUser.id)
+      updatedArticleRequest = ArticleGenerator.generateUpdateArticleRequest
+      updatedArticle <- ctx.articleService.updateArticle(updatedArticleRequest, persistedArticle.slug, persistedUser.id)
     } yield {
-      updatedArticle.title shouldBe updatedArticleRequestIn.title.value
-      updatedArticle.description shouldBe updatedArticleRequestIn.description.value
-      updatedArticle.body shouldBe updatedArticleRequestIn.body.value
+      updatedArticle.title shouldBe updatedArticleRequest.title.value
+      updatedArticle.description shouldBe updatedArticleRequest.description.value
+      updatedArticle.body shouldBe updatedArticleRequest.body.value
       updatedArticle.authorId shouldBe persistedUser.id
       updatedArticle.slug should not be persistedArticle.slug
     }
@@ -254,8 +251,8 @@ class ArticleServiceSpec extends AsyncFlatSpec with ServicesAndRepos with Option
       ownerUser        <- insertUser()
       unauthorizedUser <- insertUser()
       persistedArticle <- Articles.insertArticle(ownerUser.id)
-      updatedArticleRequestIn = ArticleGenerator.generateUpdateArticleWrapper.article
-      _ <- ctx.articleService.updateArticle(updatedArticleRequestIn, persistedArticle.slug, unauthorizedUser.id)
+      updatedArticleRequest = ArticleGenerator.generateUpdateArticleRequest
+      _ <- ctx.articleService.updateArticle(updatedArticleRequest, persistedArticle.slug, unauthorizedUser.id)
     } yield fail("Unauthorized user updated an article")
   }(_ shouldBe a[ArticleNotFound])
 

@@ -6,51 +6,52 @@ import java.time.Instant
 import cats.data.NonEmptyList
 import cats.effect.Async
 import cats.implicits._
-
+import com.colisweb.tracing.core.TracingContext
 import doobie._
 import doobie.`enum`.SqlState
 import doobie.implicits._
 import doobie.implicits.legacy.instant.JavaTimeInstantMeta
 import doobie.postgres._
 import doobie.refined.implicits._
-
 import com.real.world.http4s.AppError.UserAlreadyExist
-import com.real.world.http4s.model.Instances._
+import com.real.world.http4s.model.NewTypeImplicits._
 import com.real.world.http4s.model._
 import com.real.world.http4s.model.profile.{ IsFollowing, Profile }
 import com.real.world.http4s.model.user.User
 import com.real.world.http4s.repository.algebra.UserRepositoryAlgebra
+import io.chrisdavenport.log4cats.SelfAwareStructuredLogger
 
-import io.chrisdavenport.log4cats.Logger
-
-class PostgresUserRepositoryAlgebra[F[_]: Async: Logger]()(implicit xa: Transactor[F]) extends UserRepositoryAlgebra[F] {
+class PostgresUserRepositoryAlgebra[F[_]: Async]()(implicit L: SelfAwareStructuredLogger[F], xa: Transactor[F]) extends UserRepositoryAlgebra[F] {
 
   // This just one way to handle existing user case.
   // When you have more complex logic/requirements you might want to move checking existing user responsibility to service layer
-  override def insertUser(user: User): F[User] =
+  override def insertUser(user: User)(implicit tracingContext: TracingContext[F]): F[User] =
     for {
       query <- UserStatement.saveUser[F](user)
       user <- query.unique
         .transact(xa)
         .recoverWith {
           case e: SQLException if SqlState(e.getSQLState) == sqlstate.class23.UNIQUE_VIOLATION =>
-            Logger[F].error(e)(s"User with email [${user.email}] or username [${user.username}] is ealready exist") *>
+            L.error(e)(s"User with email [${user.email}] or username [${user.username}] is ealready exist") *>
             UserAlreadyExist(s"User with email [${user.email}] or username [${user.username}] is ealready exist").raiseError[F, User]
         }
     } yield user
 
-  override def findUserByEmail(email: Email): F[Option[User]] =
+  override def findUserByEmail(email: Email)(implicit tracingContext: TracingContext[F]): F[Option[User]] =
     UserStatement.findUserByEmail(email).option.transact(xa)
 
-  override def updateUser(user: User): F[Option[User]] = UserStatement.updateUser[F](user) >>= (_.option.transact(xa))
+  override def updateUser(user: User)(implicit tracingContext: TracingContext[F]): F[Option[User]] =
+    UserStatement.updateUser[F](user) >>= (_.option.transact(xa))
 
-  override def findUserByUsername(username: Username): F[Option[User]] =
+  override def findUserByUsername(username: Username)(implicit tracingContext: TracingContext[F]): F[Option[User]] =
     UserStatement.findUserByUsername(username).option.transact(xa)
 
-  override def findUserById(userId: UserId): F[Option[User]] =
+  override def findUserById(userId: UserId)(implicit tracingContext: TracingContext[F]): F[Option[User]] =
     UserStatement.findUserByUserId(userId).option.transact(xa)
 
-  override def findProfilesByUserId(userIds: NonEmptyList[UserId], follower: UserId): F[Map[UserId, Profile]] =
+  override def findProfilesByUserId(userIds: NonEmptyList[UserId], follower: UserId)(
+      implicit tracingContext: TracingContext[F]
+  ): F[Map[UserId, Profile]] =
     UserStatement
       .findProfilesByUserId(userIds, follower)
       .to[List]
@@ -61,12 +62,12 @@ class PostgresUserRepositoryAlgebra[F[_]: Async: Logger]()(implicit xa: Transact
       }
       .transact(xa)
 
-  override def findUsersByUserId(userIds: NonEmptyList[UserId]): F[List[User]] =
+  override def findUsersByUserId(userIds: NonEmptyList[UserId])(implicit tracingContext: TracingContext[F]): F[List[User]] =
     UserStatement.findUsersByUserId(userIds).to[List].transact(xa)
 }
 
 object PostgresUserRepositoryAlgebra {
-  def apply[F[_]: Async: Logger: Transactor](): UserRepositoryAlgebra[F] = new PostgresUserRepositoryAlgebra()
+  def apply[F[_]: Async: SelfAwareStructuredLogger: Transactor](): UserRepositoryAlgebra[F] = new PostgresUserRepositoryAlgebra()
 }
 
 object UserStatement {

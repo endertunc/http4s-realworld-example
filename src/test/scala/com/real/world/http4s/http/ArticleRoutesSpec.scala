@@ -5,45 +5,42 @@ import org.http4s._
 import org.http4s.circe.{ CirceEntityDecoder, CirceEntityEncoder }
 import org.http4s.headers.Authorization
 import org.http4s.implicits._
-
 import cats.effect.IO
-
 import io.circe.generic.semiauto.{ deriveDecoder, deriveEncoder }
 import io.circe.refined._
 import io.circe.refined._
-import io.circe.{ Encoder, Decoder }
-
+import io.circe.{ Decoder, Encoder }
 import com.real.world.http4s.AppError.ArticleNotFound
-import com.real.world.http4s.base.ServicesAndRepos
+import com.real.world.http4s.RealWorldApp
 import com.real.world.http4s.generators.{ ArticleGenerator, CommentGenerator }
-import com.real.world.http4s.model.Instances._
-import com.real.world.http4s.model.Instances._
-import com.real.world.http4s.model.article.IsFavorited.{ NotFavorited, Favorited }
+import com.real.world.http4s.model.NewTypeImplicits._
+import com.real.world.http4s.model.NewTypeImplicits._
+import com.real.world.http4s.model.article.IsFavorited.{ Favorited, NotFavorited }
 import com.real.world.http4s.model.article._
 import com.real.world.http4s.model.comment._
 import com.real.world.http4s.model.profile.IsFollowing.NotFollowing
 import com.real.world.http4s.quill.Articles
-
 import org.scalatest.OptionValues
 import org.scalatest.flatspec.AsyncFlatSpec
-class ArticleRoutesSpec extends AsyncFlatSpec with ServicesAndRepos with CirceEntityDecoder with CirceEntityEncoder with OptionValues {
+
+class ArticleRoutesSpec extends AsyncFlatSpec with RealWorldApp with CirceEntityDecoder with CirceEntityEncoder with OptionValues {
 
   // response.bodyAsText.compile.string.unsafeRunSync()
 
-  implicit val CommentEncoder: Encoder[CreateComment]               = deriveEncoder[CreateComment]
-  implicit val CommentWrapperEncoder: Encoder[CreateCommentWrapper] = deriveEncoder[CreateCommentWrapper]
+  implicit val CommentEncoder: Encoder[CreateCommentRequest]             = deriveEncoder[CreateCommentRequest]
+  implicit val CommentWrapperEncoder: Encoder[CreateCommentInputWrapper] = deriveEncoder[CreateCommentInputWrapper]
 
-  implicit val CreateArticleEncoder: Encoder[CreateArticle] = deriveEncoder[CreateArticle].mapJsonObject(_.filter {
+  implicit val CreateArticleEncoder: Encoder[CreateArticleInput] = deriveEncoder[CreateArticleInput].mapJsonObject(_.filter {
     case (_, v) => !v.isNull // drop null values
   })
 
-  implicit val UpdateArticleEncoder: Encoder[UpdateArticle] =
-    deriveEncoder[UpdateArticle].mapJsonObject(_.filter {
+  implicit val UpdateArticleEncoder: Encoder[UpdateArticleInput] =
+    deriveEncoder[UpdateArticleInput].mapJsonObject(_.filter {
       case (_, v) => !v.isNull // drop null values
     })
 
-  implicit val CreateArticleWrapperEncoder: Encoder[CreateArticleWrapper] = deriveEncoder[CreateArticleWrapper]
-  implicit val UpdateArticleWrapperEncoder: Encoder[UpdateArticleWrapper] = deriveEncoder[UpdateArticleWrapper]
+  implicit val CreateArticleWrapperEncoder: Encoder[CreateArticleInputWrapper] = deriveEncoder[CreateArticleInputWrapper]
+  implicit val UpdateArticleWrapperEncoder: Encoder[UpdateArticleInputWrapper] = deriveEncoder[UpdateArticleInputWrapper]
 
   implicit val ArticleResponseDecoder: Decoder[ArticleResponse]                       = deriveDecoder[ArticleResponse]
   implicit val ArticleResponseWrapperDecoder: Decoder[ArticleResponseWrapper]         = deriveDecoder[ArticleResponseWrapper]
@@ -97,7 +94,7 @@ class ArticleRoutesSpec extends AsyncFlatSpec with ServicesAndRepos with CirceEn
       authorUser            <- insertUser()
       (persistedArticle, _) <- insertArticle(authorUser.id)
       _                     <- ctx.articleService.favoriteArticleBySlug(persistedArticle.slug, persistedUser.id)
-      createComment = CommentGenerator.generateCreateComment
+      createComment = CommentGenerator.generateCreateCommentInputWrapper
       jwt <- ctx.jwtAuthenticator.generateJwt(persistedUser.id)
       request = Request[IO](
         method  = Method.POST,
@@ -111,7 +108,7 @@ class ArticleRoutesSpec extends AsyncFlatSpec with ServicesAndRepos with CirceEn
       commentsWithUsers <- ctx.commentService.findCommentsWithAuthorByArticleId(persistedArticle.id)
     } yield {
       commentsWithUsers should have size 1
-      commentsWithUsers.head._1.body shouldBe createComment.comment.body
+      commentsWithUsers.head._1.body.value.value shouldBe createComment.comment.body
       commentsWithUsers.head._2.id shouldBe persistedUser.id
     }
   }
@@ -248,7 +245,7 @@ class ArticleRoutesSpec extends AsyncFlatSpec with ServicesAndRepos with CirceEn
       persistedUser         <- insertUser()
       (persistedArticle, _) <- insertArticle(persistedUser.id)
       jwt                   <- ctx.jwtAuthenticator.generateJwt(persistedUser.id)
-      updateArticleRequestInWrapper = ArticleGenerator.generateUpdateArticleWrapper
+      updateArticleRequestInWrapper = ArticleGenerator.generateUpdateArticleInputWrapper
       request = Request[IO](
         method  = Method.PUT,
         uri     = apiArticles / persistedArticle.slug.value,
@@ -260,9 +257,9 @@ class ArticleRoutesSpec extends AsyncFlatSpec with ServicesAndRepos with CirceEn
       articleResponseOutWrapper <- response.as[ArticleResponseWrapper]
     } yield {
       articleResponseOutWrapper.article.slug should not be persistedArticle.slug
-      articleResponseOutWrapper.article.title shouldBe updateArticleRequestInWrapper.article.title.value
-      articleResponseOutWrapper.article.description shouldBe updateArticleRequestInWrapper.article.description.value
-      articleResponseOutWrapper.article.body shouldBe updateArticleRequestInWrapper.article.body.value
+      articleResponseOutWrapper.article.title.value.value shouldBe updateArticleRequestInWrapper.article.title.value
+      articleResponseOutWrapper.article.description.value.value shouldBe updateArticleRequestInWrapper.article.description.value
+      articleResponseOutWrapper.article.body.value.value shouldBe updateArticleRequestInWrapper.article.body.value
     }
   }
   // --------------------

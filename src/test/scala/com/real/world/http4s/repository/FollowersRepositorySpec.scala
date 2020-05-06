@@ -2,16 +2,13 @@ package com.real.world.http4s.repository
 
 import cats.data.NonEmptyList
 import cats.effect.IO
-
+import com.real.world.http4s.RealWorldApp
 import doobie.scalatest.IOChecker
-
-import com.real.world.http4s.base.ServicesAndRepos
 import com.real.world.http4s.generators.UserGenerator
 import com.real.world.http4s.model.user.User
-
 import org.scalatest.flatspec.AnyFlatSpec
 
-class FollowersRepositorySpec extends AnyFlatSpec with IOChecker with ServicesAndRepos {
+class FollowersRepositorySpec extends AnyFlatSpec with IOChecker with RealWorldApp {
 
   override def transactor: doobie.Transactor[IO] = xa
 

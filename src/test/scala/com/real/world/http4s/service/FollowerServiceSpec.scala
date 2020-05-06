@@ -1,15 +1,12 @@
 package com.real.world.http4s.service
 
-import com.real.world.http4s.base.ServicesAndRepos
+import com.real.world.http4s.RealWorldApp
 import com.real.world.http4s.generators.UserGenerator
 import com.real.world.http4s.model.profile.IsFollowing.{ Following, NotFollowing }
 import com.real.world.http4s.quill.Followers
-
 import org.scalatest.flatspec.AsyncFlatSpec
 
-class FollowerServiceSpec extends AsyncFlatSpec with ServicesAndRepos {
-
-  // ToDo test error cases like if you try to follow same user twice etc.
+class FollowerServiceSpec extends AsyncFlatSpec with RealWorldApp {
 
   "FollowerService" should "allow users to follow other users" in IOSuit {
     for {
@@ -31,7 +28,7 @@ class FollowerServiceSpec extends AsyncFlatSpec with ServicesAndRepos {
     } yield record should not be defined
   }
 
-  it should "returns true when a user follows the other user " in IOSuit {
+  it should "returns true when user is following the other user" in IOSuit {
     for {
       persistedUser     <- insertUser()
       persistedFollowee <- insertUser()
@@ -40,7 +37,7 @@ class FollowerServiceSpec extends AsyncFlatSpec with ServicesAndRepos {
     } yield isFollowing shouldBe Following
   }
 
-  it should "returns false when a user does not follow the other user" in IOSuit {
+  it should "returns false when user is not following the other user" in IOSuit {
     for {
       persistedUser     <- insertUser()
       persistedFollowee <- insertUser()
@@ -60,7 +57,6 @@ class FollowerServiceSpec extends AsyncFlatSpec with ServicesAndRepos {
     ???
   }
 
-  // ToDo return error if nothing is deleted
   it should "failed to follow if you already fallowed the same user before" ignore {
     ???
   }

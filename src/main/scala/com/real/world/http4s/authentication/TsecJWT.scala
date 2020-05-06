@@ -10,7 +10,7 @@ import io.circe.syntax._
 import io.circe.syntax._
 
 import com.real.world.http4s.AppError
-import com.real.world.http4s.model.Instances._
+import com.real.world.http4s.model.NewTypeImplicits._
 import com.real.world.http4s.model._
 
 import tsec.jws.mac.{ JWSMacCV, JWTMac }

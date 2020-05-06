@@ -2,14 +2,14 @@ package com.real.world.http4s.generators
 
 import cats.effect.IO
 
+import com.real.world.http4s.authentication.PasswordHasher
+import com.real.world.http4s.authentication.PasswordHasher
 import com.real.world.http4s.model.user
 import com.real.world.http4s.model.user.User
-import com.real.world.http4s.authentication.PasswordHasher
-import com.real.world.http4s.authentication.PasswordHasher
 
 import org.scalacheck.Gen
 
-object UserGenerator extends ValueClassGens {
+object UserGenerator extends GeneratorsBase {
 
   private def userGen()(implicit tsecPasswordHasher: PasswordHasher[IO]): Gen[IO[User]] =
     for {

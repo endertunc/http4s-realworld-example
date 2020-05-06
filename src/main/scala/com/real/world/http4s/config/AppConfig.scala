@@ -1,5 +1,6 @@
 package com.real.world.http4s.config
 
+// ToDo use pureconfig with refined
 object AppConfig {
   case class AppConfig(http: Http, databaseConfig: DatabaseConfig)
 

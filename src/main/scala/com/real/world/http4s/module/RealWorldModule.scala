@@ -10,22 +10,29 @@ import cats.data.Kleisli._
 import cats.data.{ Kleisli, OptionT }
 import cats.effect.{ ConcurrentEffect, ContextShift }
 import cats.implicits._
+import com.colisweb.tracing.core.TracingContext
 import doobie.util.transactor.Transactor
 import com.colisweb.tracing.core.TracingContextBuilder
-import com.real.world.http4s.http.middleware.{ AuthUserMiddleware, AuthedTracedMiddleware }
-import com.real.world.http4s.http.routes._
-import com.real.world.http4s.repository._
-import com.real.world.http4s.repository.algebra._
 import com.real.world.http4s.authentication.{ JwtAuthenticator, PasswordHasher, SCryptPasswordHasher, TsecJWT }
 import com.real.world.http4s.http.BaseHttpErrorHandler
+import com.real.world.http4s.http.middleware.{ AuthUserMiddleware, TracedContextMiddleware }
+import com.real.world.http4s.http.routes._
+import com.real.world.http4s.model.UserId
+import com.real.world.http4s.model.tag.TagResponse
+import com.real.world.http4s.repository._
+import com.real.world.http4s.repository.algebra._
 import com.real.world.http4s.service.{ ArticleService, CommentService, FollowerService, ProfileService, TagService, UserService }
-import io.chrisdavenport.log4cats.Logger
+import io.chrisdavenport.log4cats.SelfAwareStructuredLogger
+import org.http4s.ContextRequest
+import org.http4s.ContextRoutes
+import org.http4s.HttpRoutes
+import org.http4s.server.ContextMiddleware
 import tsec.mac.jca.{ HMACSHA512, MacSigningKey }
 import tsec.passwordhashers.jca.SCrypt
 
 // $COVERAGE-OFF$
 
-class RealWorldModule[F[_]: ConcurrentEffect: ContextShift: Transactor: Logger: TracingContextBuilder]()(
+class RealWorldModule[F[_]: ConcurrentEffect: ContextShift: Transactor: SelfAwareStructuredLogger: TracingContextBuilder]()(
     implicit signingKey: MacSigningKey[HMACSHA512]
 ) extends Http4sDsl[F] {
 
@@ -45,35 +52,14 @@ class RealWorldModule[F[_]: ConcurrentEffect: ContextShift: Transactor: Logger: 
   implicit val articleService: ArticleService[F]   = ArticleService[F]()
   implicit val commentService: CommentService[F]   = CommentService[F]()
 
-  val authenticationRoute: AuthenticationHttpRoutes[F] = AuthenticationHttpRoutes[F]()
-  val userRoute: UserRoutes[F]                         = UserRoutes[F]()
-  val tagRoute: TagRoutes[F]                           = TagRoutes[F]()
-  val profileRoute: ProfileRoutes[F]                   = ProfileRoutes[F]()
-  val articleRoute: ArticleRoutes[F]                   = ArticleRoutes[F]()
-  val anan: ExampleAuthedTracedRoutes[F]               = ExampleAuthedTracedRoutes[F]()
-  val errorHandler                                     = new BaseHttpErrorHandler[F]()
+  private val authenticationRoute: AuthenticationHttpRoutes[F] = AuthenticationHttpRoutes[F]()
+  private val userRoute: UserRoutes[F]                         = UserRoutes[F]()
+  private val tagRoute: TagRoutes[F]                           = TagRoutes[F]()
+  private val profileRoute: ProfileRoutes[F]                   = ProfileRoutes[F]()
+  private val articleRoute: ArticleRoutes[F]                   = ArticleRoutes[F]()
+  private val errorHandler                                     = new BaseHttpErrorHandler[F]()
 
   implicit val authUserMiddleware: AuthUserMiddleware[F] = new AuthUserMiddleware[F]()
-
-//  def endpoints: HttpRoutes[F] =
-//    // You can introduce a flag to toggle these settings -
-//    // Just make sure you don't log anything sensitive on live/prod
-//    RequestResponseLogger.httpRoutes(logHeaders = true, logBody = true)(
-//      Router(
-//        "/api" -> Router(
-//          "/users" -> authenticationRoute.routes,
-//          "/tags" -> tagRoute.routes,
-//          "/articles" -> {
-//            authUserMiddleware.optionalAuthMiddleware(articleRoute.optionallySecuredRoutes) <+>
-//            authUserMiddleware.authMiddleware(articleRoute.securedRoutes)
-//          },
-//          "/user" -> authUserMiddleware.authMiddleware(userRoute.routes),
-//          "/profiles" -> authUserMiddleware.authMiddleware(profileRoute.routes)
-//        )
-//      )
-//    ) <+>
-//    // This needs to be here all the time to log NotFound requests in any case
-//    RequestResponseLogger.httpRoutes(logHeaders = true, logBody = false)(Kleisli(_ => OptionT.pure(Response.notFound)))
 
   def httpApp: HttpApp[F] =
     errorHandler
@@ -94,12 +80,11 @@ class RealWorldModule[F[_]: ConcurrentEffect: ContextShift: Transactor: Logger: 
           "/users" -> authenticationRoute.routes,
           "/tags" -> tagRoute.routes,
           "/articles" -> {
-            authUserMiddleware.optionalAuthMiddleware(articleRoute.optionallySecuredRoutes) <+>
-            authUserMiddleware.authMiddleware(AuthedTracedMiddleware(articleRoute.securedRoutes))
+            authUserMiddleware.optionalAuthMiddleware(TracedContextMiddleware(articleRoute.optionallySecuredRoutes)) <+>
+            authUserMiddleware.authMiddleware(TracedContextMiddleware(articleRoute.securedRoutes))
           },
-          "/anan" -> authUserMiddleware.authMiddleware(AuthedTracedMiddleware(anan.routes)),
-          "/user" -> authUserMiddleware.authMiddleware(AuthedTracedMiddleware(userRoute.routes)),
-          "/profiles" -> authUserMiddleware.authMiddleware(AuthedTracedMiddleware(profileRoute.routes))
+          "/user" -> authUserMiddleware.authMiddleware(TracedContextMiddleware(userRoute.routes)),
+          "/profiles" -> authUserMiddleware.authMiddleware(TracedContextMiddleware(profileRoute.routes))
         )
       )
     ) <+>

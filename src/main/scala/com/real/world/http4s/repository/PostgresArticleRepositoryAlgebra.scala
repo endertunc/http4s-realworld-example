@@ -6,43 +6,44 @@ import cats.data.NonEmptyList
 import cats.effect.{ Async, Sync }
 import cats.free.Free
 import cats.implicits._
-
+import com.colisweb.tracing.core.TracingContext
 import doobie.Fragments.whereOrOpt
 import doobie.free.connection
 import doobie.implicits._
 import doobie.implicits.legacy.instant.JavaTimeInstantMeta
 import doobie.refined.implicits._
 import doobie.{ ConnectionIO, _ }
-
 import com.real.world.http4s.AppError.{ ArticleNotFound, RecordNotFound }
-import com.real.world.http4s.model.Instances._
+import com.real.world.http4s.model.NewTypeImplicits._
 import com.real.world.http4s.model._
 import com.real.world.http4s.model.article.Article
 import com.real.world.http4s.model.tag.Tag.TagName
-import com.real.world.http4s.model.{ FavoritedRecord, Pagination }
+import com.real.world.http4s.model.Pagination
+import com.real.world.http4s.model.article.FavoritedRecord
 import com.real.world.http4s.repository.algebra.ArticleRepositoryAlgebra
-
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import io.chrisdavenport.log4cats.{ Logger, SelfAwareStructuredLogger }
 
-class PostgresArticleRepositoryAlgebra[F[_]: Async: Logger]()(implicit xa: Transactor[F]) extends ArticleRepositoryAlgebra[F] {
+class PostgresArticleRepositoryAlgebra[F[_]: Async]()(implicit L: SelfAwareStructuredLogger[F], xa: Transactor[F])
+    extends ArticleRepositoryAlgebra[F] {
 
   implicit private val log: SelfAwareStructuredLogger[ConnectionIO] = Slf4jLogger.getLogger[ConnectionIO]
 
-  override def findBySlug(slug: Slug): F[Option[Article]] = ArticlesStatement.findBySlug(slug).option.transact(xa)
+  override def findBySlug(slug: Slug)(implicit tracingContext: TracingContext[F]): F[Option[Article]] =
+    ArticlesStatement.findBySlug(slug).option.transact(xa)
 
   override def listArticles(
       maybeAuthorUsername: Option[Username],
       maybeFavoritedAuthorUsername: Option[Username],
       maybeTagName: Option[TagName],
       pagination: Pagination
-  ): F[List[Article]] =
+  )(implicit tracingContext: TracingContext[F]): F[List[Article]] =
     ArticlesStatement
       .listArticles(maybeAuthorUsername, maybeFavoritedAuthorUsername, maybeTagName, pagination)
       .to[List]
       .transact(xa)
 
-  override def listArticlesByFavoritedUsers(userId: UserId, pagination: Pagination): F[List[Article]] =
+  override def listArticlesByFavoritedUsers(userId: UserId, pagination: Pagination)(implicit tracingContext: TracingContext[F]): F[List[Article]] =
     ArticlesStatement
       .listArticlesByFavoritedUsers(userId, pagination)
       .to[List]
@@ -52,7 +53,7 @@ class PostgresArticleRepositoryAlgebra[F[_]: Async: Logger]()(implicit xa: Trans
     * Just demonstrate how to make transaction with doobie.
     * Otherwise, we should be using soft delete in complex relational delete operations.
     */
-  override def deleteBySlugAndUserId(slug: Slug, userId: UserId): F[Unit] = {
+  override def deleteBySlugAndUserId(slug: Slug, userId: UserId)(implicit tracingContext: TracingContext[F]): F[Unit] = {
     val query: Free[connection.ConnectionOp, Unit] =
       for {
         articleAsOpt <- ArticlesStatement.findBySlug(slug).option
@@ -71,16 +72,16 @@ class PostgresArticleRepositoryAlgebra[F[_]: Async: Logger]()(implicit xa: Trans
 
   override def createArticle(
       article: Article
-  ): F[Article] =
+  )(implicit tracingContext: TracingContext[F]): F[Article] =
     for {
       query            <- ArticlesStatement.createArticle[F](article)
       persistedArticle <- query.unique.transact(xa)
     } yield persistedArticle
 
-  override def favorite(articleId: ArticleId, userId: UserId): F[FavoritedRecord] =
+  override def favorite(articleId: ArticleId, userId: UserId)(implicit tracingContext: TracingContext[F]): F[FavoritedRecord] =
     ArticlesStatement.favorite(articleId, userId).unique.transact(xa)
 
-  override def unfavorite(articleId: ArticleId, userId: UserId): F[Unit] =
+  override def unfavorite(articleId: ArticleId, userId: UserId)(implicit tracingContext: TracingContext[F]): F[Unit] =
     ArticlesStatement
       .unfavorite(articleId, userId)
       .run
@@ -88,39 +89,43 @@ class PostgresArticleRepositoryAlgebra[F[_]: Async: Logger]()(implicit xa: Trans
       .flatMap {
         case effectedRows: Int if effectedRows == 0 =>
           RecordNotFound(s"User already unfavorited the article").raiseError[F, Unit] <*
-          Logger[F].warn("No record found for the following users...")
+          L.warn("No record found for the following users...")
         case effectedRows: Int if effectedRows == 1 => Sync[F].delay(())
       }
 
-  override def isFavoritedByUser(articleId: ArticleId, userId: UserId): F[Boolean] =
+  override def isFavoritedByUser(articleId: ArticleId, userId: UserId)(implicit tracingContext: TracingContext[F]): F[Boolean] =
     ArticlesStatement
       .isFavoritedByUser(articleId, userId)
       .option
       .map(_.isDefined)
       .transact(xa)
 
-  override def findFavoritedRecordsByArticleId(articleId: ArticleId): F[List[FavoritedRecord]] =
+  override def findFavoritedRecordsByArticleId(articleId: ArticleId)(implicit tracingContext: TracingContext[F]): F[List[FavoritedRecord]] =
     ArticlesStatement
       .findArticleFavorites(articleId)
       .to[List]
       .transact(xa)
 
-  override def updateArticle(article: Article): F[Option[Article]] =
+  override def updateArticle(article: Article)(implicit tracingContext: TracingContext[F]): F[Option[Article]] =
     for {
       query   <- ArticlesStatement.updateArticle[F](article)
       article <- query.option.transact(xa)
     } yield article
 
-  override def findArticlesFavoriteCount(articleIds: NonEmptyList[ArticleId]): F[Map[ArticleId, FavoritesCount]] =
+  override def findArticlesFavoriteCount(
+      articleIds: NonEmptyList[ArticleId]
+  )(implicit tracingContext: TracingContext[F]): F[Map[ArticleId, FavoritesCount]] =
     // Is there better way to having map
     ArticlesStatement.findArticlesFavoriteCount(articleIds).to[List].map(_.toMap).transact(xa)
 
-  override def findFavoritedsByUserId(articleIds: NonEmptyList[ArticleId], userId: UserId): F[Set[ArticleId]] =
+  override def findFavoritedsByUserId(articleIds: NonEmptyList[ArticleId], userId: UserId)(
+      implicit tracingContext: TracingContext[F]
+  ): F[Set[ArticleId]] =
     ArticlesStatement.findFavoritedsByUserId(articleIds, userId).to[Set].transact(xa)
 }
 
 object PostgresArticleRepositoryAlgebra {
-  def apply[F[_]: Async: Logger: Transactor](): ArticleRepositoryAlgebra[F] = new PostgresArticleRepositoryAlgebra()
+  def apply[F[_]: Async: SelfAwareStructuredLogger: Transactor](): ArticleRepositoryAlgebra[F] = new PostgresArticleRepositoryAlgebra()
 }
 
 object ArticlesStatement {

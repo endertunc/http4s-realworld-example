@@ -5,21 +5,17 @@ import org.http4s._
 import org.http4s.circe.{ CirceEntityDecoder, CirceEntityEncoder }
 import org.http4s.headers.Authorization
 import org.http4s.implicits._
-
 import cats.effect.IO
-
+import com.real.world.http4s.RealWorldApp
 import io.circe.generic.semiauto.{ deriveDecoder, deriveEncoder }
 import io.circe.refined._
-import io.circe.{ Encoder, Decoder }
-
-import com.real.world.http4s.base.ServicesAndRepos
+import io.circe.{ Decoder, Encoder }
 import com.real.world.http4s.generators.UpdateUserGenerator
-import com.real.world.http4s.model.Instances._
+import com.real.world.http4s.model.NewTypeImplicits._
 import com.real.world.http4s.model.user._
-
 import org.scalatest.flatspec.AsyncFlatSpec
 
-class UserRoutesSpec extends AsyncFlatSpec with ServicesAndRepos with CirceEntityDecoder with CirceEntityEncoder {
+class UserRoutesSpec extends AsyncFlatSpec with RealWorldApp with CirceEntityDecoder with CirceEntityEncoder {
 
   implicit val UserUpdateRequestInEncoder: Encoder[UpdateUser]               = deriveEncoder[UpdateUser]
   implicit val UpdateUserRequestInWrapperEncoder: Encoder[UpdateUserWrapper] = deriveEncoder[UpdateUserWrapper]

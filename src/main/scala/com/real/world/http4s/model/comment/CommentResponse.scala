@@ -5,7 +5,7 @@ import io.circe.generic.semiauto._
 import io.circe.refined._
 import io.circe.{ Decoder, Encoder }
 
-import com.real.world.http4s.model.Instances._
+import com.real.world.http4s.model.NewTypeImplicits._
 import com.real.world.http4s.model._
 import com.real.world.http4s.model.comment.Comment.CommentId
 import com.real.world.http4s.model.profile.Profile

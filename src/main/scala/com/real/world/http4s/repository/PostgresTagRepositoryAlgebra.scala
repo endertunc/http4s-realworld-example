@@ -3,37 +3,35 @@ package com.real.world.http4s.repository
 import cats.data.NonEmptyList
 import cats.effect.Async
 import cats.implicits._
-
+import com.colisweb.tracing.core.TracingContext
 import doobie._
 import doobie.implicits._
 import doobie.refined.implicits._
 import doobie.util.update.Update
-
-import com.real.world.http4s.model.Instances._
+import com.real.world.http4s.model.NewTypeImplicits._
 import com.real.world.http4s.model._
-import com.real.world.http4s.model.tag.Tag.TagId
-import com.real.world.http4s.model.tag.{ Tag, TagIn }
+import com.real.world.http4s.model.tag.Tag
+import com.real.world.http4s.model.tag.Tag.{ TagId, TagName }
 import com.real.world.http4s.repository.algebra.TagRepositoryAlgebra
-
-import io.chrisdavenport.log4cats.Logger
+import io.chrisdavenport.log4cats.SelfAwareStructuredLogger
 
 // ToDo values that might be related with errors
-class PostgresTagRepositoryAlgebra[F[_]: Async: Logger]()(implicit xa: Transactor[F]) extends TagRepositoryAlgebra[F] {
+class PostgresTagRepositoryAlgebra[F[_]: Async]()(implicit L: SelfAwareStructuredLogger[F], xa: Transactor[F]) extends TagRepositoryAlgebra[F] {
 
-  override def createTags(tags: List[TagIn]): F[List[Tag]] =
+  override def createTags(tags: List[TagName])(implicit tracingContext: TracingContext[F]): F[List[Tag]] =
     TagsStatement
       .insertTags(tags)
       .compile
       .toList
       .transact(xa)
 
-  override def findAll: F[List[Tag]] =
+  override def findAll()(implicit tracingContext: TracingContext[F]): F[List[Tag]] =
     TagsStatement.findAll
       .to[List]
       .transact(xa)
 
   // ToDo .map(_ => ())
-  override def insertArticleTagsAssociation(articleId: ArticleId, tags: List[Tag]): F[Unit] =
+  override def insertArticleTagsAssociation(articleId: ArticleId, tags: List[Tag])(implicit tracingContext: TracingContext[F]): F[Unit] =
     TagsStatement
       .insertArticleTagsAssociation(articleId, tags)
       .compile
@@ -41,13 +39,13 @@ class PostgresTagRepositoryAlgebra[F[_]: Async: Logger]()(implicit xa: Transacto
       .map(_ => ())
       .transact(xa)
 
-  override def findTagsByArticleId(articleId: ArticleId): F[List[Tag]] =
+  override def findTagsByArticleId(articleId: ArticleId)(implicit tracingContext: TracingContext[F]): F[List[Tag]] =
     TagsStatement
       .findTagsByArticleId(articleId)
       .to[List]
       .transact(xa)
 
-  override def findTagsByArticleIds(articleIds: NonEmptyList[ArticleId]): F[Map[ArticleId, List[Tag]]] =
+  override def findTagsByArticleIds(articleIds: NonEmptyList[ArticleId])(implicit tracingContext: TracingContext[F]): F[Map[ArticleId, List[Tag]]] =
     TagsStatement
       .findTagsByArticleIds(articleIds)
       .to[List]
@@ -60,19 +58,10 @@ class PostgresTagRepositoryAlgebra[F[_]: Async: Logger]()(implicit xa: Transacto
       }
       .transact(xa)
 
-//  override def deleteByArticleId(articleId: ArticleId): F[Unit] =
-//    TagsStatement
-//      .deleteByArticleId(articleId)
-//      .run
-//      .map(_ => ())
-//      .transact(xa)
-//      .attemptT
-//      .handleAndLogException("Unexpected exception happened while deleting article-tags association")
-
 }
 
 object PostgresTagRepositoryAlgebra {
-  def apply[F[_]: Async: Logger: Transactor](): PostgresTagRepositoryAlgebra[F] = new PostgresTagRepositoryAlgebra()
+  def apply[F[_]: Async: SelfAwareStructuredLogger: Transactor](): PostgresTagRepositoryAlgebra[F] = new PostgresTagRepositoryAlgebra()
 }
 
 object TagsStatement {
@@ -80,9 +69,9 @@ object TagsStatement {
   def findAll: doobie.Query0[Tag] =
     sql"SELECT id, name FROM tags".query[Tag]
 
-  def insertTags(tags: List[TagIn]): fs2.Stream[doobie.ConnectionIO, Tag] = {
+  def insertTags(tags: List[TagName]): fs2.Stream[doobie.ConnectionIO, Tag] = {
     val sql = "INSERT INTO tags (name) values (?) ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name RETURNING id, name"
-    Update[TagIn](sql).updateManyWithGeneratedKeys[Tag]("id", "name")(tags)
+    Update[TagName](sql).updateManyWithGeneratedKeys[Tag]("id", "name")(tags)
   }
 
   // ToDo ignore on duplicate
