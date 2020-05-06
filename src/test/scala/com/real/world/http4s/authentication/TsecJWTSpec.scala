@@ -4,7 +4,7 @@ import cats.effect.IO
 
 import io.circe.refined._
 
-import com.real.world.http4s.model.Instances._
+import com.real.world.http4s.model.NewTypeImplicits._
 import com.real.world.http4s.model.UserId
 
 import org.scalatest.flatspec.AsyncFlatSpec

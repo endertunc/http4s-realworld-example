@@ -6,35 +6,30 @@ import java.time.Instant
 import cats.data.NonEmptyList
 import cats.effect.Async
 import cats.implicits._
-
+import com.colisweb.tracing.core.TracingContext
 import doobie._
 import doobie.`enum`.SqlState
 import doobie.implicits._
 import doobie.implicits.legacy.instant.JavaTimeInstantMeta
 import doobie.postgres.sqlstate
 import doobie.refined.implicits._
-
 import com.real.world.http4s.AppError.{ FolloweeNotFound, RecordNotFound }
-import com.real.world.http4s.model.Instances._
+import com.real.world.http4s.model.NewTypeImplicits._
 import com.real.world.http4s.model._
 import com.real.world.http4s.repository.algebra.FollowerRepositoryAlgebra
-
-import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import io.chrisdavenport.log4cats.{ Logger, SelfAwareStructuredLogger }
 
-class PostgresFollowerRepositoryAlgebra[F[_]: Async: Logger]()(implicit xa: Transactor[F]) extends FollowerRepositoryAlgebra[F] {
+class PostgresFollowerRepositoryAlgebra[F[_]: Async]()(implicit L: SelfAwareStructuredLogger[F], xa: Transactor[F])
+    extends FollowerRepositoryAlgebra[F] {
 
-  implicit val logger: SelfAwareStructuredLogger[F] = Slf4jLogger.getLogger[F]
-
-  override def isFollowing(followee: UserId, follower: UserId): F[Boolean] =
+  override def isFollowing(followee: UserId, follower: UserId)(implicit tracingContext: TracingContext[F]): F[Boolean] =
     FollowersStatement
       .isFollowing(followee, follower)
       .option
       .map(_.isDefined)
       .transact(xa)
 
-  // ToDo map(_ => ())
-  override def follow(followee: UserId, follower: UserId): F[Unit] =
+  override def follow(followee: UserId, follower: UserId)(implicit tracingContext: TracingContext[F]): F[Unit] =
     for {
       query <- FollowersStatement.follow[F](followee, follower)
       _ <- query.unique
@@ -42,13 +37,12 @@ class PostgresFollowerRepositoryAlgebra[F[_]: Async: Logger]()(implicit xa: Tran
         .transact(xa)
         .recoverWith {
           case e: SQLException if SqlState(e.getSQLState) == sqlstate.class23.FOREIGN_KEY_VIOLATION =>
-            // ToDo there is actually an edge case which makes this message invalid
             Logger[F].error(e)(s"Followee [$followee] or follower [$follower] does not exist anymore") *>
             FolloweeNotFound(s"The user you are trying to follow does not exist").raiseError[F, Unit]
         }
     } yield ()
 
-  override def unfollow(followee: UserId, follower: UserId): F[Unit] =
+  override def unfollow(followee: UserId, follower: UserId)(implicit tracingContext: TracingContext[F]): F[Unit] =
     FollowersStatement
       .unfollow(followee, follower)
       .run
@@ -64,7 +58,7 @@ class PostgresFollowerRepositoryAlgebra[F[_]: Async: Logger]()(implicit xa: Tran
 }
 
 object PostgresFollowerRepositoryAlgebra {
-  def apply[F[_]: Async: Logger: Transactor](): FollowerRepositoryAlgebra[F] = new PostgresFollowerRepositoryAlgebra()
+  def apply[F[_]: Async: SelfAwareStructuredLogger: Transactor](): FollowerRepositoryAlgebra[F] = new PostgresFollowerRepositoryAlgebra()
 }
 
 object FollowersStatement {

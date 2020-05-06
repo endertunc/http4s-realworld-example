@@ -7,10 +7,10 @@ import io.circe.generic.semiauto.deriveDecoder
 import io.circe.refined._
 import io.circe.refined._
 
-import com.real.world.http4s.model.Instances._
-import com.real.world.http4s.model.Instances._
-import com.real.world.http4s.model._
 import com.real.world.http4s.authentication.PasswordHasher
+import com.real.world.http4s.model.NewTypeImplicits._
+import com.real.world.http4s.model.NewTypeImplicits._
+import com.real.world.http4s.model._
 
 import io.chrisdavenport.log4cats.Logger
 import mouse.all._

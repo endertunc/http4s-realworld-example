@@ -1,15 +1,14 @@
 package com.real.world.http4s.service
 
-import com.real.world.http4s.AppError.{ RecordNotFound, ArticleNotFound }
-import com.real.world.http4s.base.ServicesAndRepos
+import com.real.world.http4s.AppError.{ ArticleNotFound, RecordNotFound }
+import com.real.world.http4s.RealWorldApp
 import com.real.world.http4s.generators.{ ArticleGenerator, CommentGenerator }
 import com.real.world.http4s.model.article.Article
 import com.real.world.http4s.model.comment.Comment
 import com.real.world.http4s.quill.Comments
-
 import org.scalatest.flatspec.AsyncFlatSpec
 
-class CommentServiceSpec extends AsyncFlatSpec with ServicesAndRepos {
+class CommentServiceSpec extends AsyncFlatSpec with RealWorldApp {
 
   "CommentService" should "add comment to article" in IOSuit {
     val comment: Comment = CommentGenerator.generateComment

@@ -2,22 +2,22 @@ package com.real.world.http4s.model.article
 
 import java.time.Instant
 
-import io.circe.generic.semiauto.deriveDecoder
-import io.circe.generic.semiauto.deriveEncoder
+import io.circe.generic.semiauto.{ deriveDecoder, deriveEncoder }
 import io.circe.refined._
 import io.circe.{ Decoder, Encoder }
 
-import com.real.world.http4s.model.Instances._
+import com.real.world.http4s.model.NewTypeImplicits._
 import com.real.world.http4s.model._
 import com.real.world.http4s.model.profile.Profile
-import com.real.world.http4s.model.tag.{ Tag, TagOut }
+import com.real.world.http4s.model.tag.Tag
+import com.real.world.http4s.model.tag.Tag.TagName
 
 final case class ArticleResponse(
     slug: Slug,
     title: Title,
     description: Description,
     body: ArticleBody,
-    tagList: List[TagOut],
+    tagList: List[TagName],
     createdAt: Instant,
     updatedAt: Instant,
     favorited: IsFavorited,
@@ -36,7 +36,7 @@ object ArticleResponse {
   def apply(
       article: Article,
       author: Profile,
-      tags: List[TagOut],
+      tags: List[TagName],
       favorited: IsFavorited,
       favoritesCount: FavoritesCount
   ): ArticleResponse =
@@ -68,7 +68,7 @@ object ArticleResponseWrapper {
       ArticleResponse(
         article        = article,
         author         = author,
-        tags           = tags.map(TagOut.fromTag),
+        tags           = tags.map(_.name),
         favorited      = favorited,
         favoritesCount = favoritesCount
       )
@@ -87,7 +87,7 @@ object ArticleResponseListWrapper {
         ArticleResponse(
           article        = article,
           author         = profile,
-          tags           = tags.map(TagOut.fromTag),
+          tags           = tags.map(_.name),
           favorited      = isFavorited,
           favoritesCount = favoriteCount
         )

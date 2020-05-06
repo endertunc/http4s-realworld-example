@@ -5,13 +5,16 @@ import org.http4s.dsl.Http4sDsl
 import org.http4s.headers.Authorization
 import org.http4s.server.AuthMiddleware
 import org.http4s.syntax.string._
+
 import cats.data.{ EitherT, Kleisli, OptionT }
 import cats.effect.Sync
 import cats.implicits._
+
 import com.real.world.http4s.AppError
 import com.real.world.http4s.AppError.{ InvalidAuthorizationHeader, MissingAuthorizationHeader }
-import com.real.world.http4s.model._
 import com.real.world.http4s.authentication.JwtAuthenticator
+import com.real.world.http4s.model._
+
 import io.chrisdavenport.log4cats.Logger
 import mouse.all._
 

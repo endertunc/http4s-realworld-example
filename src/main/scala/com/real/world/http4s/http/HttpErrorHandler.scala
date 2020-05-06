@@ -2,11 +2,14 @@ package com.real.world.http4s.http
 
 import org.http4s.dsl.Http4sDsl
 import org.http4s.{ HttpRoutes, Request, Response }
+
 import cats.data.{ Kleisli, OptionT }
 import cats.implicits._
 import cats.{ ApplicativeError, MonadError }
+
 import com.real.world.http4s.AppError
 
+// ToDo this will be moved to routes level
 class BaseHttpErrorHandler[F[_]](implicit M: MonadError[F, Throwable]) extends Http4sDsl[F] {
 
   private val handler: (Request[F], Throwable) => F[Response[F]] = {

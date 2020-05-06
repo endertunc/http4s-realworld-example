@@ -6,7 +6,7 @@ import com.real.world.http4s.model.user.{ UpdateUser, UpdateUserWrapper }
 
 import org.scalacheck.Gen
 
-object UpdateUserGenerator extends ValueClassGens {
+object UpdateUserGenerator extends GeneratorsBase {
 
   private def updateUserGen: Gen[UpdateUser] =
     for {

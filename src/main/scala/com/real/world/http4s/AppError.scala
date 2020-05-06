@@ -6,10 +6,12 @@ import org.http4s.circe._
 import org.http4s.{ Response, Status }
 
 import cats.Applicative
-import cats.data.NonEmptyList
+import cats.data.{ NonEmptyChain, NonEmptyList }
 import cats.implicits._
 
-import com.real.world.http4s.model.{ Error, ErrorWrapperOut }
+import com.real.world.http4s.model.FieldError.FieldValidationErrorsToFieldError
+import com.real.world.http4s.model.ValidationErrors.InvalidField
+import com.real.world.http4s.model.{ Error, ErrorWrapperOut, FieldError }
 
 sealed trait AppError extends NoStackTrace {
   def message: String
@@ -52,12 +54,13 @@ object AppError {
 
   final case class UserAlreadyExist(message: String) extends ConflictErrors
 
-//  final case class DomainValidationFailed(errors: NonEmptyChain[DomainValidation]) extends BadRequestErrors {
-//    override def message: String = errors.map(_.errorMessage).toList.mkString(",")
-//    override def toHttpResponse[F[_]]()(implicit F: Applicative[F]): F[Response[F]] =
-//      Response(Status.BadRequest)
-//        .withEntity(ErrorWrapperOut(Error(errors.map(_.errorMessage).toNonEmptyList)))(jsonEncoderOf[F, ErrorWrapperOut])
-//        .pure[F]
-//  }
+  final case class InvalidFieldError(errors: NonEmptyChain[InvalidField]) extends AppError {
+    def message: String = errors.toNonEmptyList.map(e => e.field -> e.message).toList.toMap.toString
+    def status: Status  = Status.BadRequest
+    override def toHttpResponse[F[_]]()(implicit F: Applicative[F]): F[Response[F]] =
+      Response(status)
+        .withEntity(errors.toFieldError)(jsonEncoderOf[F, FieldError])
+        .pure[F]
+  }
 
 }

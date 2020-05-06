@@ -2,16 +2,22 @@ package com.real.world.http4s
 
 import org.http4s.server.Server
 import org.http4s.server.blaze.BlazeServerBuilder
+
 import cats.effect._
 import cats.implicits._
+
 import doobie.Transactor
 import doobie.util.ExecutionContexts
+
 import com.colisweb.tracing.context.OpenTracingContext
 import com.colisweb.tracing.core.TracingContextBuilder
+
 import io.opentracing.util.GlobalTracer
+
 import com.real.world.http4s.config.AppConfig.AppConfig
 import com.real.world.http4s.db.migration.FlywayDatabaseMigrator
 import com.real.world.http4s.module.RealWorldModule
+
 import io.chrisdavenport.log4cats.SelfAwareStructuredLogger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import pureconfig.ConfigSource

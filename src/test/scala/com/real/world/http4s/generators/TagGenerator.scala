@@ -1,14 +1,12 @@
 package com.real.world.http4s.generators
 
-import com.real.world.http4s.model.tag.TagIn
+import com.real.world.http4s.model.tag.Tag.TagName
 
 import org.scalacheck.Gen
 
-object TagGenerator {
+object TagGenerator extends GeneratorsBase {
 
-  private def tagInGen: Gen[TagIn] = Gen.alphaNumStr.map(TagIn(_))
-
-  def generateTagIn(): TagIn = tagInGen.sample.get
-  def generateTagInList(size: Int = 5): List[TagIn] = Gen.listOfN(size, tagInGen).sample.get
+  def generateTagIn(): TagName = tagNameGen.sample.get
+  def generateTagInList(size: Int = 5): List[TagName] = Gen.listOfN(size, tagNameGen).sample.get // scalastyle:off magic.number
 
 }

@@ -1,14 +1,13 @@
 package com.real.world.http4s.service
 
 import com.real.world.http4s.AppError.{ FolloweeNotFound, RecordNotFound, UserNotFound }
-import com.real.world.http4s.base.ServicesAndRepos
+import com.real.world.http4s.RealWorldApp
 import com.real.world.http4s.generators.UserGenerator
 import com.real.world.http4s.model.profile.IsFollowing.{ Following, NotFollowing }
 import com.real.world.http4s.quill.Followers
-
 import org.scalatest.flatspec.AsyncFlatSpec
 
-class ProfileServiceSpec extends AsyncFlatSpec with ServicesAndRepos {
+class ProfileServiceSpec extends AsyncFlatSpec with RealWorldApp {
 
   "Profile Service" should "allow to follow other users by username" in IOSuit {
     for {

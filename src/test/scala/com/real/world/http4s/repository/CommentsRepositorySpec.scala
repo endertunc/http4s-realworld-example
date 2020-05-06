@@ -1,15 +1,12 @@
 package com.real.world.http4s.repository
 
 import cats.effect.IO
-
+import com.real.world.http4s.RealWorldApp
 import doobie.scalatest.IOChecker
-
-import com.real.world.http4s.base.ServicesAndRepos
 import com.real.world.http4s.generators.{ CommentGenerator, UserGenerator }
-
 import org.scalatest.flatspec.AnyFlatSpec
 
-class CommentsRepositorySpec extends AnyFlatSpec with IOChecker with ServicesAndRepos {
+class CommentsRepositorySpec extends AnyFlatSpec with IOChecker with RealWorldApp {
 
   private val comment                            = CommentGenerator.generateComment
   private val user                               = UserGenerator.generateUser

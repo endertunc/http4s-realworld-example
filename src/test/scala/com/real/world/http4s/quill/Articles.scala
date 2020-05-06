@@ -4,12 +4,12 @@ import cats.effect.IO
 
 import doobie.syntax.connectionio.toConnectionIOOps
 
+import com.real.world.http4s.authentication.PasswordHasher
 import com.real.world.http4s.generators.ArticleGenerator
 import com.real.world.http4s.model.article.Article
 import com.real.world.http4s.model.{ ArticleId, Slug, UserId }
 import com.real.world.http4s.quill.DoobiePostgresContext._
 import com.real.world.http4s.repository.QuillSupport
-import com.real.world.http4s.authentication.PasswordHasher
 
 import io.getquill.{ idiom => _ }
 

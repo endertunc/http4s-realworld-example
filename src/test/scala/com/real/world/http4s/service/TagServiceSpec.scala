@@ -1,14 +1,12 @@
 package com.real.world.http4s.service
 
 import cats.data.NonEmptyList
-
-import com.real.world.http4s.base.ServicesAndRepos
+import com.real.world.http4s.RealWorldApp
 import com.real.world.http4s.generators.TagGenerator
 import com.real.world.http4s.quill.{ Articles, Tags }
-
 import org.scalatest.flatspec.AsyncFlatSpec
 
-class TagServiceSpec extends AsyncFlatSpec with ServicesAndRepos {
+class TagServiceSpec extends AsyncFlatSpec with RealWorldApp {
 
   "Tag Service" should "insert list of tags" in IOSuit {
     for {
@@ -31,7 +29,7 @@ class TagServiceSpec extends AsyncFlatSpec with ServicesAndRepos {
     for {
       _       <- ctx.tagService.createTags(tagIns)
       allTags <- ctx.tagService.findAll
-    } yield allTags.filter(t => tagIns.exists(p => p.name == t.name.value)) should have size 2
+    } yield allTags should have size 2
   }
 
   it should "find tags by article id" in IOSuit {

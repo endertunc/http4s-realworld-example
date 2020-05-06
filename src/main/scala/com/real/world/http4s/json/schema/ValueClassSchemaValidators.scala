@@ -1,16 +1,16 @@
-package com.real.world.http4s.json
-
+//package com.real.world.http4s.json
+//
 //import com.real.world.http4s.model.article.Article.{ ArticleBody, Description, Title }
 //import com.real.world.http4s.model.tag.TagIn
 //import com.real.world.http4s.model.user.User.{ Bio, Email, Image, PlainTextPassword, Username }
 //import com.real.world.http4s.model.article.Article.{ ArticleBody, Description, Title }
 //import com.real.world.http4s.model.tag.TagIn
 //import com.real.world.http4s.model.user.User.{ Bio, Email, Image, PlainTextPassword, Username }
-
-object ValueClassSchemaValidators extends ValueClassSchemaValidators
-
-trait ValueClassSchemaValidators {
-
+//
+//object ValueClassSchemaValidators extends ValueClassSchemaValidators
+//
+//trait ValueClassSchemaValidators {
+//
 //  // user & profile
 //  implicit val emailSchema: json.Schema[Email]                = json.Json.schema[Email]("email")
 //  implicit val passwordSchema: json.Schema[PlainTextPassword] = json.Json.schema[PlainTextPassword]("plainTextPassword")
@@ -24,5 +24,5 @@ trait ValueClassSchemaValidators {
 //  implicit val articleBodySchema: json.Schema[ArticleBody] = json.Json.schema[ArticleBody]("body")
 //  implicit val tagInSchema: json.Schema[TagIn]             = json.Json.schema[TagIn]("tagIn")
 //  implicit val tagListSchema: json.Schema[List[TagIn]]     = json.Json.schema[List[TagIn]]("tagList")
-
-}
+//
+//}
