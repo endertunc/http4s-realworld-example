@@ -12,7 +12,7 @@
 - Quill
 - ScalaTest
 
-## Future work that directly not related to Real World Example 
+## Future work that not directly related to Real World Example 
 
 - Add Tapir/Rho/Endpoints support
 - Add/Enable Prometheus metrics
